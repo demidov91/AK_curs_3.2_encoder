@@ -6,7 +6,10 @@
 #include "tests.h"
 #include <Windows.h>
 #include <stdlib.h>
-
+#include "LengthProducer.h"
+#include "CommunicationalStructures.h"
+#include <iostream>
+#include <conio.h>
 
 
 using namespace std;
@@ -178,16 +181,49 @@ void test_EnDecoder_async()
 	fclose(key2);
 
 	test_EnDecoder_async_one_way("input1.txt", "input2.txt", "output1.txt", "outptu2.txt");
-	test_EnDecoder_async_one_way("output1.txt", "outptu2.txt", "input1_2.txt", "input2_2.txt");	
-	
-	
+	test_EnDecoder_async_one_way("output1.txt", "outptu2.txt", "input1_2.txt", "input2_2.txt");
 }
 
 
+void test_LengthProducer_prepareFiles(const char** names)
+{
+	int testLengthes[3] = {100, 10, 20};
+	char buffer[100];
+	memset(buffer, 0, 100);
+	for(int i = 0; i < 3; i++)
+	{
+		FILE* file = fopen(names[i], "wb");
+		fwrite(buffer, 1, testLengthes[i], file);
+		fclose(file);
+	}
+
+}
+
+
+void test_LengthProducer()
+{
+	const char* names[] =  {"length1.txt", "length2.txt", "length3.txt"};
+	test_LengthProducer_prepareFiles(names);
+	LengthProducer producer(3, names, 60);
+	Lengthes nextLengthes;
+	do
+	{
+		nextLengthes = producer.getNextLengthes();
+		for(vector<ThreadLengthPair> ::iterator it = nextLengthes.answer.begin(); it < nextLengthes.answer.end(); it++)
+		{
+			cout << it ->thread << " " << it ->length <<" ";
+		}
+		cout <<endl;		
+	}while(nextLengthes.count > 0);
+	
+
+}
 
 
 void beginTests()
 {
 	test_EnDecoder();
 	test_EnDecoder_async();
+	test_LengthProducer();
+	getch();
 }

@@ -8,7 +8,7 @@ private:
 	int numberOfFiles;
 	unsigned long int *bytesAvailable;
 	int blockSize;
-	bool noData = false;
+	bool noData;
 public:
 	LengthProducer(int numberOfFiles, const char** fileNames, int blockSize);
 	Lengthes getNextLengthes();

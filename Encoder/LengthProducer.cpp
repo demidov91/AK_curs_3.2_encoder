@@ -17,6 +17,7 @@ LengthProducer::LengthProducer(int numberOfFiles, const char** fileNames, int bl
 		fclose(inspecting);
 	}
 	this ->blockSize = blockSize;
+	this ->noData = false;
 }
 
 Lengthes LengthProducer ::getNextLengthes()
@@ -26,6 +27,7 @@ Lengthes LengthProducer ::getNextLengthes()
 		Lengthes noDataResult;
 		noDataResult.answer = vector<ThreadLengthPair>();
 		noDataResult.count = 0;
+		return noDataResult;
 	}
 	unsigned long int minFile = *min_element(bytesAvailable, &bytesAvailable[numberOfFiles]);
 	unsigned long int* tails = new unsigned long int [numberOfFiles];
@@ -41,9 +43,9 @@ Lengthes LengthProducer ::getNextLengthes()
 	{
 		for(int i = 0; i < numberOfFiles; i++)
 		{
-			sizes[i] = bytesAvailable[i];
-			steps = 1;			
+			sizes[i] = bytesAvailable[i];						
 		}
+		steps = 1;
 	}
 	else
 	{
@@ -64,9 +66,9 @@ Lengthes LengthProducer ::getNextLengthes()
 		long int* stepsNecessary = new long int[numberOfFiles];
 		for(int i = 0; i <numberOfFiles; i++)
 		{
-			sizes[i] = unsigned long int((float)blockAvailable / totalTail * tails[i] + 1);
+			sizes[i] = unsigned long int(floor((float)blockAvailable / totalTail * tails[i]));
 			blockAvailable -= sizes[i];
-			totalTail -= sizes[i];
+			totalTail -= tails[i];
 			stepsNecessary[i] = sizes[i] == 0? LONG_MAX : long int(tails[i] / sizes[i]);
 		}
 		steps = *min_element(stepsNecessary, &stepsNecessary[numberOfFiles]);
@@ -93,6 +95,7 @@ Lengthes LengthProducer ::getNextLengthes()
 	toReturn.answer = map;	
 	delete[] sizes;
 	delete[] tails;
+	return toReturn;
 }
 
 
