@@ -1,4 +1,8 @@
-*
-!*.cpp
-!*.c
-!*.h
+*.sln
+*.sdf
+*.suo
+ipch/*
+*.exe
+*.ilk
+*.pdb
+*.txt
