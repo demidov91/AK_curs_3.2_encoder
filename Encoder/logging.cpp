@@ -4,5 +4,10 @@ using namespace std;
 
 void log_error(void* args)
 {
-	cout << args << endl;
+	cout << (char*)args << endl;
+}
+
+void log_test(void* args)
+{
+	cout << "TEST: " << (const char*)args << endl;
 }

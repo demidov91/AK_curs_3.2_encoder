@@ -10,6 +10,8 @@
 #include "CommunicationalStructures.h"
 #include <iostream>
 #include <conio.h>
+#include "EncodedDataAccessor.h"
+#include "logging.h"
 
 
 using namespace std;
@@ -215,9 +217,106 @@ void test_LengthProducer()
 		}
 		cout <<endl;		
 	}while(nextLengthes.count > 0);
+}
+
+void test_EncodedDataAccessor_prepairFiles(const char** names)
+{
+	for(char i = 0; i < 3; i++)
+	{
+		FILE* file;
+		fopen_s(&file, names[i], "wb");
+		for(int j = 0; j < 100; j++)
+		{
+			fwrite(&i, 1, 1, file);
+		}
+		fclose(file);
+	}
+}
+
+
+
+
+void test_EncodedDataAccessor_genPointers(char* pointers, char* lengthes)
+{
+	for(char i = 0; i < 3; i++)
+	{
+		pointers[2*i] = i;
+		pointers[2*i+1] = lengthes[i];
+	}
+}
+
+
+void test_EncodedDataAccessor_checkData(char* buffer)
+{
+	bool ok = true;
+	for(int i = 0; i < 9; i++)
+	{
+		ok &= buffer[i] == 0;
+	}
+	for(int i = 9; i < 90; i++)
+	{
+		ok &= buffer[i] == 1;
+	}
+	for(int i = 90; i < 180; i++)
+	{
+		ok &= buffer[i] == 2;
+	}
+
+
+	for(int i = 180; i < 270; i++)
+	{
+		ok &= buffer[i] == 0;
+	}
+	for(int i = 270; i < 282; i++)
+	{
+		ok &= buffer[i] == 1;
+	}
 	
 
+	for(int i = 282; i < 283; i++)
+	{
+		ok &= buffer[i] == 0;
+	}
+	for(int i = 285; i < 292; i++)
+	{
+		ok &= buffer[i] == 1;
+	}
+	for(int i = 294; i < 304; i++)
+	{
+		ok &= buffer[i] == 2;
+	}
+	cout << ok ? log_test("EncodedDataAccessor: ok") : log_test("EncodedDataAccessor: fail");
 }
+
+void test_EncodedDataAccessor()
+{
+	const char* names[] = {"test\\one", "test\\two", "test\\three"};
+	test_EncodedDataAccessor_prepairFiles(names);
+	const char* keys[] = {"", "", ""};
+	EncodedDataAccessor* dataAccessor = new EncodedDataAccessor(3, keys, names);
+	dataAccessor ->__testStart();
+	char* buffer = new char[306];
+	__int8 pointers[6];
+	char lengthes[] = {3, 27, 30};
+	test_EncodedDataAccessor_genPointers(pointers, lengthes);
+	dataAccessor ->getData(buffer, pointers, 3);
+	buffer += 180;
+	lengthes[0] = 30;
+	lengthes[1] = 4;
+	lengthes[2] = 0;
+	test_EncodedDataAccessor_genPointers(pointers, lengthes);
+	dataAccessor ->getData(buffer, pointers, 3);
+	buffer += 102;
+	lengthes[0] = 1;
+	lengthes[1] = 3;
+	lengthes[2] = 4;
+	test_EncodedDataAccessor_genPointers(pointers, lengthes);
+	dataAccessor ->getData(buffer, pointers, 3);
+	buffer -= 282;
+	test_EncodedDataAccessor_checkData(buffer);
+	delete[] buffer;
+}
+
 
 
 void beginTests()
@@ -225,5 +324,6 @@ void beginTests()
 	test_EnDecoder();
 	test_EnDecoder_async();
 	test_LengthProducer();
+	test_EncodedDataAccessor();
 	getch();
 }
