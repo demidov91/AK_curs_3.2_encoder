@@ -224,12 +224,12 @@ void test_LengthProducer()
 	}while(nextLengthes.count > 0);
 }
 
-void test_EncodedDataAccessor_prepairFiles(const char** names)
+void test_EncodedDataAccessor_prepairFiles(vector<const string> names)
 {
 	for(char i = 0; i < 3; i++)
 	{
 		FILE* file;
-		fopen_s(&file, names[i], "wb");
+		fopen_s(&file, names[i].c_str(), "wb");
 		for(int j = 0; j < 100; j++)
 		{
 			fwrite(&i, 1, 1, file);
@@ -295,10 +295,21 @@ void test_EncodedDataAccessor_checkData(char* buffer)
 
 void test_EncodedDataAccessor()
 {
-	const char* names[] = {"test\\one", "test\\two", "test\\three"};
+	vector<const string> names;
+	names.push_back(string("test\\one"));
+	names.push_back(string("test\\two"));
+	names.push_back(string("test\\three"));
+	vector<const path> keys;
+	keys.push_back(path());
+	keys.push_back(path());
+	keys.push_back(path());
+	vector<unsigned long int> bytes;
+	bytes.push_back(100);
+	bytes.push_back(100);
+	bytes.push_back(100);
+
 	test_EncodedDataAccessor_prepairFiles(names);
-	const char* keys[] = {"", "", ""};
-	EncodedDataAccessor* dataAccessor = new EncodedDataAccessor(3, keys, names);
+	EncodedDataAccessor* dataAccessor = new EncodedDataAccessor(&keys, &names, &bytes);
 	dataAccessor ->__testStart();
 	char* buffer = new char[306];
 	__int8 pointers[6];
@@ -320,6 +331,7 @@ void test_EncodedDataAccessor()
 	buffer -= 282;
 	test_EncodedDataAccessor_checkData(buffer);
 	delete[] buffer;
+	delete dataAccessor;
 }
 
 

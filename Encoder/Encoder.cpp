@@ -7,14 +7,13 @@
 #include "helper.h"
 #include <list>
 #include "RandomGenerator.h"
+#include "EncodedDataAccessor.h"
+#include "LengthProducer.h"
 using namespace std;
 using namespace boost ::filesystem;
 
 
-Encoder ::Encoder()
-{
-};
-
+Encoder ::Encoder(){};
 
 int Encoder ::Start(vector<const string>* except, const  vector<const string>* only)
 {
@@ -45,6 +44,10 @@ int Encoder ::Start(vector<const string>* except, const  vector<const string>* o
 			}			
 		}		
 	}
+	lengther = LengthProducer(&targets, data_block);
+	initialThreadValues = lengther.getAllAvailable();
+
+
 	int threadNumberItaerator = 0;
 	EncoderInteractive asker;
 	formCollectionOfAvailableKeys(".");
@@ -63,7 +66,7 @@ int Encoder ::Start(vector<const string>* except, const  vector<const string>* o
 		verbalKeys.push_back(asker.askForVerbalKey(*it, basename(*it)));
 		threadNumberItaerator++;
 	}
-
+	dataAccessor = EncodedDataAccessor(&keys, &targets, &initialThreadValues);
 	return 0;
 };
 
@@ -211,3 +214,5 @@ path Encoder ::renameKey(path* oldPath, const string* pureName, unsigned char th
 	rename(*oldPath, newPath);
 	return newPath;
 };
+
+

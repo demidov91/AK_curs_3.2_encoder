@@ -3,6 +3,8 @@
 #include <vector>
 #include <boost\filesystem.hpp>
 #include "tests.h"
+#include "EncodedDataAccessor.h"
+#include "LengthProducer.h"
 using namespace std;
 using namespace boost ::filesystem;
 
@@ -15,6 +17,9 @@ private:
 	list<path> availableKeys;
 	vector<const path> keys;
 	vector<const string> verbalKeys;
+	vector<unsigned long int> initialThreadValues; 
+	LengthProducer lengther;
+	EncodedDataAccessor dataAccessor;
 
 	/**
 	1 + 512 + 256 + 256*x

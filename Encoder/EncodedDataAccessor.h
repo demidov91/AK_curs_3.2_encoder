@@ -1,7 +1,10 @@
 #pragma once
 #include <vector>
 #include <Windows.h>
+#include <boost\filesystem.hpp>
+#include "tests.h"
 using namespace std;
+using namespace boost ::filesystem;
 
 #define MAX_FILE_COUNT 256
 #define MAX_BLOCK_SIZE 32
@@ -11,17 +14,20 @@ class EncodedDataAccessor
 {
 private:
 	int fileCount;
-	vector<char*> keys;
-	vector<char*> files;
+	vector<const path> keys;
+	vector<const string> files;
 	vector<unsigned long int> availableBytes;
 	vector<HANDLE> inPipes;
 	vector<HANDLE> outPipes;
 	void* tempBuffer;
-public:
+	
+public:	
+	
+	EncodedDataAccessor();
 	/**
-	Number of files, names of keys and data files.
+	Names of keys and data files.
 	*/
-	EncodedDataAccessor(int, const char**, const char**);
+	EncodedDataAccessor(vector<const path>* keys, vector<const string>* threads, vector<unsigned long int>* available);
 
 	/**
 	Should be invoked before getData(...);
@@ -41,5 +47,7 @@ public:
 	void __testStart();
 
 	~EncodedDataAccessor(void);
+
+	friend Friendly;
 };
 

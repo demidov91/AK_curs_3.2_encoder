@@ -10,13 +10,9 @@ using namespace boost ::filesystem;
 LengthProducer::LengthProducer(vector<const string>* fileNames, int blockSize)
 {
 	this ->numberOfFiles = fileNames ->size();
-	bytesAvailable = new unsigned long int[numberOfFiles];
-	
-	int threadIterator = 0;
 	for(vector<const string> ::iterator fsObj = fileNames ->begin(); fsObj < fileNames ->end();fsObj++)
 	{
-		bytesAvailable[threadIterator] = GetFSObjectSize(*fsObj);		
-		threadIterator++;
+		bytesAvailable.push_back(GetFSObjectSize(*fsObj));
 	}
 	this ->blockSize = blockSize;
 	this ->noData = false;
@@ -31,7 +27,7 @@ Lengthes LengthProducer ::getNextLengthes()
 		noDataResult.count = 0;
 		return noDataResult;
 	}
-	unsigned long int minFile = *min_element(bytesAvailable, &bytesAvailable[numberOfFiles]);
+	unsigned long int minFile = *min_element(bytesAvailable.begin(), bytesAvailable.end());
 	unsigned long int* tails = new unsigned long int [numberOfFiles];
 	unsigned long int totalTail = 0;
 	for(int i = 0; i < numberOfFiles; i++)
@@ -119,8 +115,10 @@ unsigned long int LengthProducer ::GetFSObjectSize(string root)
 };
 
 
-
-LengthProducer::~LengthProducer(void)
+vector<unsigned long int> LengthProducer ::getAllAvailable()
 {
-	delete[] bytesAvailable;
-}
+	return bytesAvailable;
+};
+
+
+

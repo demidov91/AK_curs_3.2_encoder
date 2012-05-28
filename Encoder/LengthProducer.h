@@ -7,7 +7,7 @@ class LengthProducer
 {
 private:
 	int numberOfFiles;
-	unsigned long int *bytesAvailable;
+	vector<unsigned long int> bytesAvailable;
 	int blockSize;
 	bool noData;
 
@@ -15,7 +15,8 @@ private:
 public:
 	LengthProducer(vector<const string>*, int blockSize);
 	Lengthes getNextLengthes();
-	~LengthProducer(void);
+	vector<unsigned long int> getAllAvailable();
+	
 
 
 	/**
@@ -23,7 +24,7 @@ public:
 	*/
 	LengthProducer()
 	{
-		bytesAvailable = new unsigned long int[0];
+		
 	}
 
 	/**
