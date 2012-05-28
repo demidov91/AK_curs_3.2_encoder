@@ -12,7 +12,7 @@
 #include <conio.h>
 #include "EncodedDataAccessor.h"
 #include "logging.h"
-
+#include "Encoder.h"
 
 using namespace std;
 
@@ -187,14 +187,14 @@ void test_EnDecoder_async()
 }
 
 
-void test_LengthProducer_prepareFiles(const char** names)
+void test_LengthProducer_prepareFiles(vector<const string> names)
 {
 	int testLengthes[3] = {100, 10, 20};
 	char buffer[100];
 	memset(buffer, 0, 100);
 	for(int i = 0; i < 3; i++)
 	{
-		FILE* file = fopen(names[i], "wb");
+		FILE* file = fopen(names[i].c_str(), "wb");
 		fwrite(buffer, 1, testLengthes[i], file);
 		fclose(file);
 	}
@@ -205,8 +205,13 @@ void test_LengthProducer_prepareFiles(const char** names)
 void test_LengthProducer()
 {
 	const char* names[] =  {"length1.txt", "length2.txt", "length3.txt"};
-	test_LengthProducer_prepareFiles(names);
-	LengthProducer producer(3, names, 60);
+	vector<const string> v_names;
+	for (int i = 0; i< 3; i++)
+	{
+		v_names.push_back(string(names[i]));
+	}
+	test_LengthProducer_prepareFiles(v_names);
+	LengthProducer producer(&v_names, 60);
 	Lengthes nextLengthes;
 	do
 	{
@@ -318,6 +323,121 @@ void test_EncodedDataAccessor()
 }
 
 
+void test_EncoderCountpercentage()
+{
+	Encoder testing;
+	int input[] = {101, 200, 300, 500, 400};
+	int output[5] = {0,0,0,0,0};
+	for(int i = 0; i < 5; i++)
+	{
+		output[i] = testing.__CountDataBlock(input[i]);
+	}
+	if(output[0] != 300 || output[1] != 3 || output[2] != 1 || output[3] != 0 || output[4] != 1)
+	{
+		cerr << "Error in EncoderCountpercentage"<< output << endl;
+	}
+}
+
+void test_LengthGenerator_GetFSObjectSize()
+{
+	vector<const string> names;
+	LengthProducer tester;
+	if (tester.__GetFSObjectSize(string("test/value_test1")) != 15)
+	{
+		log_error("test/value_test1 error");		
+	}
+	if (tester.__GetFSObjectSize(string("test/value_test2")) != 30)
+	{
+		log_error("test/value_test2 error");		
+	}
+	if (tester.__GetFSObjectSize(string("test/value_test3")) != 5)
+	{
+		log_error("test/value_test3 error");		
+	}
+}
+
+void Friendly ::test_formCollectionOfAvailableKeys()
+{
+	Encoder tester;
+	tester.formCollectionOfAvailableKeys("test\\keys_only_names");
+	if(tester.availableKeys.size() != 2)
+	{
+		log_error("test_formCollectionOfAvailableKeys");
+	}
+	cout << "Ok? Keys:" << endl <<tester.availableKeys.front().filename().string() << endl;
+	tester.availableKeys.pop_front();
+	cout <<tester.availableKeys.front().filename().string() << endl;
+}
+
+void Friendly ::test_Encoder_keyForThread()
+{
+	Encoder tester;
+	tester.formCollectionOfAvailableKeys("test/keys_only_names");
+	if(tester.keyForThread(&string("key.")) != path())
+	{
+		log_test("keyForThread incorrect");
+	}
+	if(tester.keyForThread(&string("key")) != path())
+	{
+		log_test("keyForThread incorrect");
+	}
+	if(tester.keyForThread(&string("key.key")) == path("key.key.key"))
+	{
+		log_test("keyForThread incorrect");
+	}
+	if(tester.keyForThread(&string("key.key")) != path())
+	{
+		log_test("keyForThread incorrect");
+	}
+	if(tester.keyForThread(&string("1")) == path("1.key"))
+	{
+		log_test("keyForThread incorrect");
+	}
+
+}
+
+
+void Friendly ::test_Encoder_generateKeyForThread()
+{
+	string threadname("test\\generate_keys\\thraedname");
+	int number = 12;
+	Encoder tester;
+	tester.generateKeyForThread(&threadname, number);
+	path target("test\\generate_keys\\thraedname_12.key"); 
+	if(!exists(target))
+	{
+		log_test("test_Encoder_generateKeyForThread");
+		return;
+	}
+	if(file_size(target) != 112)
+	{
+		log_test("test_Encoder_generateKeyForThread");
+		return;
+	}
+}
+
+void Friendly ::test_Encoder_renameKey()
+{
+	string threadname("test\\generate_keys\\for_renaming");
+	int number = 5;
+	Encoder tester;
+	tester.generateKeyForThread(&threadname, number);
+	path target("test\\generate_keys\\for_renaming_5.key"); 
+	
+	path result = tester.renameKey(&target, &path(threadname).filename().string(), 6);
+	target = path("test\\generate_keys\\for_renaming_6.key");
+	if(target != result)
+	{
+		log_test("test_Encoder_renameKey");
+		return;
+	}
+	if(!exists(target))
+	{
+		log_test("test_Encoder_renameKey");
+		return;
+	}
+}
+
 
 void beginTests()
 {
@@ -325,5 +445,11 @@ void beginTests()
 	test_EnDecoder_async();
 	test_LengthProducer();
 	test_EncodedDataAccessor();
+	test_EncoderCountpercentage();
+	test_LengthGenerator_GetFSObjectSize();
+	Friendly ::test_formCollectionOfAvailableKeys();
+	Friendly ::test_Encoder_keyForThread();
+	Friendly ::test_Encoder_generateKeyForThread();
+	Friendly ::test_Encoder_renameKey();
 	getch();
 }

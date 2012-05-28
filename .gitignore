@@ -15,3 +15,4 @@ Encoder/Debug/*
 *.filters
 *.user
 Encoder/test/*
+external dependences/*

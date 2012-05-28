@@ -9,6 +9,8 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+	beginTests();
+	return 0;
 	if (argc < 2)
 	{
 		cerr << NOT_ENOUGH_PARAMETERS << endl;
@@ -17,9 +19,9 @@ int main(int argc, char** argv)
 		
 	if (!strcmp(argv[1], "/e"))
 	{
-		int size;
-		vector<const char*> except;
-		vector<const char*> only;
+		int size = 0;
+		vector<const string> except;
+		vector<const string> only;
 		if(argc == 3)
 		{
 			cerr << WRONG_USAGE << argv[2] << endl;
@@ -44,7 +46,7 @@ int main(int argc, char** argv)
 				{
 					for(int j = positionForOnlyOrExcept+1; j < argc; j++)
 					{
-						only.push_back(argv[j]);
+						only.push_back(string(argv[j]));
 					}
 				}
 				else
@@ -53,7 +55,7 @@ int main(int argc, char** argv)
 					{
 						for(int j = positionForOnlyOrExcept+1; j < argc; j++)
 						{
-							except.push_back(argv[j]);
+							except.push_back(string(argv[j]));
 						}
 					}
 					else
@@ -65,7 +67,7 @@ int main(int argc, char** argv)
 			}
 		}
 		Encoder* processor = new Encoder();
-		int numberOfFiles = processor ->Start(&except, &only, size);
+		int numberOfFiles = size ? processor ->Start(&except, &only, size) : processor ->Start(&except, &only);
 		cout << ENCODED_SUCCESSFULLY << endl;
 		cout << numberOfFiles << " files encoded." << endl;
 		delete processor;

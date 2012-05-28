@@ -1,5 +1,16 @@
 #include "RandomGenerator.h"
 #include <algorithm>
+#include <cstdlib>
+
+void RandomGenerator ::getNewKey(char* buffer)
+{
+	for(int i = 0; i < 112; i++)
+	{
+		buffer[i] = rand();
+	}
+}
+
+
 
 vector<int> RandomGenerator ::randomVector(int n)
 {
