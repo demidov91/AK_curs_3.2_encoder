@@ -67,6 +67,8 @@ int Encoder ::Start(vector<const string>* except, const  vector<const string>* o
 		threadNumberItaerator++;
 	}
 	dataAccessor = EncodedDataAccessor(&keys, &targets, &initialThreadValues);
+	randomer = RandomGenerator(data_block);
+	mapper = MapEncoder(&verbalKeys);
 	return 0;
 };
 
@@ -77,6 +79,10 @@ int Encoder ::countDataBlock(int percentage)
 	if(p <= 1 || p > 4)
 	{
 		return 0;
+	}
+	if (p < 1.012)
+	{
+		p = 1.012;
 	}
 	return (int)(769 / (p - 1) / 256);
 }

@@ -2,6 +2,16 @@
 #include <algorithm>
 #include <cstdlib>
 
+RandomGenerator ::RandomGenerator()
+{};
+
+
+RandomGenerator ::RandomGenerator(unsigned char blockSize)
+{
+	this ->blockSize = blockSize;
+};
+
+
 void RandomGenerator ::getNewKey(char* buffer)
 {
 	for(int i = 0; i < 112; i++)

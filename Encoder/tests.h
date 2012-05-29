@@ -7,7 +7,7 @@ public:
 	void static test_Encoder_keyForThread();
 	void static test_Encoder_generateKeyForThread();
 	void static test_Encoder_renameKey();
-	
+	void static test_MapEncoder_costructor();	
 };
 
 

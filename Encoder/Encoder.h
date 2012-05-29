@@ -5,6 +5,8 @@
 #include "tests.h"
 #include "EncodedDataAccessor.h"
 #include "LengthProducer.h"
+#include "RandomGenerator.h"
+#include "MapEncoder.h"
 using namespace std;
 using namespace boost ::filesystem;
 
@@ -20,6 +22,8 @@ private:
 	vector<unsigned long int> initialThreadValues; 
 	LengthProducer lengther;
 	EncodedDataAccessor dataAccessor;
+	RandomGenerator randomer;
+	MapEncoder mapper;
 
 	/**
 	1 + 512 + 256 + 256*x

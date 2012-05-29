@@ -13,7 +13,7 @@
 #include "EncodedDataAccessor.h"
 #include "logging.h"
 #include "Encoder.h"
-
+#include "MapEncoder.h"
 using namespace std;
 
 
@@ -450,6 +450,23 @@ void Friendly ::test_Encoder_renameKey()
 	}
 }
 
+void Friendly ::test_MapEncoder_costructor()
+{
+	vector<const string> keys;
+	keys.push_back("1");
+	keys.push_back("");
+	keys.push_back("2");
+	MapEncoder tester(&keys);
+	for(int i = 0; i < keys.size(); i++)
+	{
+		if(keys[i].compare(tester.threads[i] ->key))
+		{
+			log_test("MapEncoder_costructor");
+			return;
+		}
+	}
+}
+
 
 void beginTests()
 {
@@ -463,5 +480,6 @@ void beginTests()
 	Friendly ::test_Encoder_keyForThread();
 	Friendly ::test_Encoder_generateKeyForThread();
 	Friendly ::test_Encoder_renameKey();
+	Friendly ::test_MapEncoder_costructor();
 	getch();
 }
