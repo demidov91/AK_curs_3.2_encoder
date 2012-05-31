@@ -187,42 +187,6 @@ void test_EnDecoder_async()
 }
 
 
-void test_LengthProducer_prepareFiles(vector<const string> names)
-{
-	int testLengthes[3] = {100, 10, 20};
-	char buffer[100];
-	memset(buffer, 0, 100);
-	for(int i = 0; i < 3; i++)
-	{
-		FILE* file = fopen(names[i].c_str(), "wb");
-		fwrite(buffer, 1, testLengthes[i], file);
-		fclose(file);
-	}
-
-}
-
-
-void test_LengthProducer()
-{
-	const char* names[] =  {"length1.txt", "length2.txt", "length3.txt"};
-	vector<const string> v_names;
-	for (int i = 0; i< 3; i++)
-	{
-		v_names.push_back(string(names[i]));
-	}
-	test_LengthProducer_prepareFiles(v_names);
-	LengthProducer producer(&v_names, 60);
-	Lengthes nextLengthes;
-	do
-	{
-		nextLengthes = producer.getNextLengthes();
-		for(vector<ThreadLengthPair> ::iterator it = nextLengthes.answer.begin(); it < nextLengthes.answer.end(); it++)
-		{
-			cout << it ->thread << " " << it ->length <<" ";
-		}
-		cout <<endl;		
-	}while(nextLengthes.count > 0);
-}
 
 void test_EncodedDataAccessor_prepairFiles(vector<const string> names)
 {
@@ -344,7 +308,7 @@ void test_EncoderCountpercentage()
 	{
 		output[i] = testing.__CountDataBlock(input[i]);
 	}
-	if(output[0] != 300 || output[1] != 3 || output[2] != 1 || output[3] != 0 || output[4] != 1)
+	if(output[0] != 250 || output[1] != 3 || output[2] != 1 || output[3] != 0 || output[4] != 1)
 	{
 		cerr << "Error in EncoderCountpercentage"<< output << endl;
 	}
@@ -467,12 +431,105 @@ void Friendly ::test_MapEncoder_costructor()
 	}
 }
 
+void test_LengthProducer_prepareFiles(vector<const string>* names, vector<int>* lengthes)
+{
+	char buffer[200000];
+	memset(buffer, 0, 200000);
+	for(int i = 0; i < 3; i++)
+	{
+		FILE* file = fopen((*names)[i].c_str(), "wb");
+		fwrite(buffer, 1, (*lengthes)[i], file);
+		fclose(file);
+	}
+
+}
+
+void Friendly::test_LengthProducer_constructor()
+{
+	const char* names[] =  {"test\\length\\construct1.txt", "test\\length\\construct2.txt", "test\\length\\construct3.txt"};
+	vector<const string> v_names;
+	for (int i = 0; i< 3; i++)
+	{
+		v_names.push_back(string(names[i]));
+	}
+	vector<int> lengthes;
+	lengthes.push_back(130000);
+	lengthes.push_back(12988);
+	lengthes.push_back(25999);
+	test_LengthProducer_prepareFiles(&v_names, &lengthes);
+	LengthProducer producer(&v_names, 13);
+	if(producer.bytesAvailable[0] != 10000 || producer.bytesAvailable[1] != 1000 || producer.bytesAvailable[2] != 2000)
+	{
+		log_test("lengthProducer constructor");		
+	}	
+}
+
+bool test_LengthProducer_getNext_checkAnswer(LengthProducer* tester)
+{
+	Lengthes nextLengthes = tester ->getNextLengthes();
+	if(nextLengthes.count != 38 || nextLengthes.answer.size() != 3)
+		return false;
+	vector<ThreadLengthPair>* answer = &nextLengthes.answer;
+	if((*answer)[0].length != 230 || (*answer)[1].length != 0 || (*answer)[2].length != 26)
+		return false;
+
+	nextLengthes = tester ->getNextLengthes();
+	if(nextLengthes.count != 1 || nextLengthes.answer.size() != 3)
+		return false;
+	answer = &nextLengthes.answer;
+	if((*answer)[0].length != 244 || (*answer)[1].length != 0 || (*answer)[2].length != 12)
+		return false;
+
+	nextLengthes = tester ->getNextLengthes();
+	if(nextLengthes.count != 11 || nextLengthes.answer.size() != 3)
+		return false;
+	answer = &nextLengthes.answer;
+	if((*answer)[0].length != 86 || (*answer)[1].length != 85 || (*answer)[2].length != 85)
+		return false;
+
+	nextLengthes = tester ->getNextLengthes();
+	if(nextLengthes.count != 1 || nextLengthes.answer.size() != 3)
+		return false;
+	answer = &nextLengthes.answer;
+	if((*answer)[0].length != 70 || (*answer)[1].length != 65 || (*answer)[2].length != 65)
+		return false;
+
+	if(tester ->getNextLengthes().count != 0)
+		return false;
+
+	return true;
+}
+
+
+void Friendly::test_LengthProducer_getNext()
+{
+	const char* names[] =  {"test\\length\\construct1.txt", "test\\length\\construct2.txt", "test\\length\\construct3.txt"};
+	vector<const string> v_names;
+	for (int i = 0; i< 3; i++)
+	{
+		v_names.push_back(string(names[i]));
+	}
+	vector<int> lengthes;
+	lengthes.push_back(130000);
+	lengthes.push_back(12988);
+	lengthes.push_back(25999);
+	test_LengthProducer_prepareFiles(&v_names, &lengthes);
+	LengthProducer producer(&v_names, 13);
+	if(!test_LengthProducer_getNext_checkAnswer(&producer))
+	{
+		log_test("LengthProducer_getNext");
+	}	
+}
+
+
+
+
+
 
 void beginTests()
 {
 	test_EnDecoder();
 	test_EnDecoder_async();
-	test_LengthProducer();
 	test_EncodedDataAccessor();
 	test_EncoderCountpercentage();
 	test_LengthGenerator_GetFSObjectSize();
@@ -481,5 +538,7 @@ void beginTests()
 	Friendly ::test_Encoder_generateKeyForThread();
 	Friendly ::test_Encoder_renameKey();
 	Friendly ::test_MapEncoder_costructor();
+	Friendly ::test_LengthProducer_constructor();
+	Friendly ::test_LengthProducer_getNext();
 	getch();
 }

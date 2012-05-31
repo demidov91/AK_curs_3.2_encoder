@@ -12,9 +12,14 @@ LengthProducer::LengthProducer(vector<const string>* fileNames, int blockSize)
 	this ->numberOfFiles = fileNames ->size();
 	for(vector<const string> ::iterator fsObj = fileNames ->begin(); fsObj < fileNames ->end();fsObj++)
 	{
-		bytesAvailable.push_back(GetFSObjectSize(*fsObj));
+		unsigned long int fsObjectSize = GetFSObjectSize(*fsObj);
+		unsigned long int blocksInObject = fsObjectSize / blockSize;
+		if (fsObjectSize % blockSize)
+		{
+			blocksInObject++;			
+		}
+		bytesAvailable.push_back(blocksInObject);
 	}
-	this ->blockSize = blockSize;
 	this ->noData = false;
 }
 
@@ -37,7 +42,7 @@ Lengthes LengthProducer ::getNextLengthes()
 	}
 	int* sizes = new int[numberOfFiles];
 	long int steps;
-	if((totalTail < blockSize) && ((totalTail + minFile*numberOfFiles) < blockSize))
+	if((totalTail + minFile*numberOfFiles) < BLOCK_COUNT)
 	{
 		for(int i = 0; i < numberOfFiles; i++)
 		{
@@ -47,25 +52,21 @@ Lengthes LengthProducer ::getNextLengthes()
 	}
 	else
 	{
-		if(totalTail < blockSize)
+		if(totalTail < BLOCK_COUNT)
 		{
-			unsigned long int additionalBlock = (blockSize - totalTail) / numberOfFiles;
-			if ((blockSize - totalTail) % numberOfFiles > 0)
-			{
-				additionalBlock++;
-			}
+			totalTail = 0;
 			for(int i = 0; i < numberOfFiles; i++)
 			{
-				tails[i] += additionalBlock;
-			}
-			totalTail += additionalBlock*numberOfFiles;
+				tails[i] = bytesAvailable[i];
+				totalTail += tails[i];
+			}			
 		}
-		int blockAvailable = blockSize;
+		int blocksAvailable = BLOCK_COUNT;
 		long int* stepsNecessary = new long int[numberOfFiles];
 		for(int i = 0; i <numberOfFiles; i++)
 		{
-			sizes[i] = unsigned long int(floor((float)blockAvailable / totalTail * tails[i]));
-			blockAvailable -= sizes[i];
+			sizes[i] = unsigned long int(floor((float)blocksAvailable / totalTail * tails[i]));
+			blocksAvailable -= sizes[i];
 			totalTail -= tails[i];
 			stepsNecessary[i] = sizes[i] == 0? LONG_MAX : long int(tails[i] / sizes[i]);
 		}

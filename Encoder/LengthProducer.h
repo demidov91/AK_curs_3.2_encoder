@@ -2,6 +2,10 @@
 
 #include "CommunicationalStructures.h"
 #include <string>
+#include "tests.h"
+#define BLOCK_COUNT 256
+using namespace std;
+
 
 class LengthProducer
 {
@@ -34,5 +38,7 @@ public:
 	{
 		return GetFSObjectSize(inp);
 	};
+
+	friend Friendly;
 };
 
