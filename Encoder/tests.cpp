@@ -523,9 +523,6 @@ void Friendly::test_LengthProducer_getNext()
 
 
 
-
-
-
 void beginTests()
 {
 	test_EnDecoder();
