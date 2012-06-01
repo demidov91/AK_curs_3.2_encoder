@@ -14,7 +14,7 @@ public:
 	/**
 	This constructor specified to use R.Generator inside Encoder.
 	*/
-	RandomGenerator(unsigned char blockSize);
+	RandomGenerator* create(unsigned char blockSize);
 
 
 	/**

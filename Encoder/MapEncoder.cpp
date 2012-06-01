@@ -21,15 +21,18 @@ MapEncoder ::ThreadMapEncoder::~ThreadMapEncoder()
 }
 
 MapEncoder::MapEncoder()
-{}
+{
 
-MapEncoder::MapEncoder(vector<const string>* keys)
+}
+
+MapEncoder* MapEncoder::create(vector<const string>* keys)
 {
 	for(vector<const string> ::iterator it = keys ->begin(); it != keys ->end(); it++)
 	{
 		ThreadMapEncoder* thread = new ThreadMapEncoder(&*it);
 		threads.push_back(thread);
 	}	
+	return this;
 }
 
 void MapEncoder::encodePointersAndMap(char* pointers, char* map)

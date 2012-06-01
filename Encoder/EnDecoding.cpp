@@ -2,13 +2,14 @@
 #include <fstream>
 #include <iostream>
 #include <Windows.h>
+#include "CommunicationalStructures.h"
 using namespace std;
 
 
 void encode_async(void* in_args)
 {
-	void** args = (void**)in_args; 
-	FILE* file = fopen((char*)args[0], "rb");
+	ArgsForAsyncEncoder* args = (ArgsForAsyncEncoder*)in_args; 
+	FILE* file = fopen(args ->key, "rb");
 	__int8 keyPart[16];
 	fread(keyPart, 1, 16, file);
 	__asm
@@ -47,9 +48,10 @@ void encode_async(void* in_args)
 	}
 	fclose(file);
 
-	file = fopen((const char*)args[1], "rb");
-	encode(file, (PHANDLE)(args[2]));
+	file = fopen(args ->file, "rb");
+	encode(file,args ->pipe);
 	fclose(file);
+	(*args ->byteToTalk) = 0;
 }
 
 
@@ -123,5 +125,5 @@ toStream:
 			jmp startReading
 stopReading:
 		}
-	
+		
 }

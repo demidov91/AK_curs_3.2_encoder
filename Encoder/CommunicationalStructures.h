@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <Windows.h>
 using namespace std;
 
 struct ThreadLengthPair
@@ -14,4 +15,14 @@ struct Lengthes
 {
 	int count;	
 	vector<ThreadLengthPair> answer;
+};
+
+
+class ArgsForAsyncEncoder
+{
+public:
+	const char* key;
+	const char* file;
+	PHANDLE pipe;
+	char* byteToTalk;
 };

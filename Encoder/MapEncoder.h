@@ -23,7 +23,7 @@ private:
 	vector<ThreadMapEncoder*> threads;
 public:
 	MapEncoder();
-	MapEncoder(vector<const string>*);
+	MapEncoder* create(vector<const string>*);
 	void encodePointersAndMap(char*, char*);
 	~MapEncoder();
 friend Friendly;

@@ -3,6 +3,8 @@
 #include <Windows.h>
 #include <boost\filesystem.hpp>
 #include "tests.h"
+#include "CommunicationalStructures.h"
+#include "Constants.h"
 using namespace std;
 using namespace boost ::filesystem;
 
@@ -14,20 +16,21 @@ class EncodedDataAccessor
 {
 private:
 	int fileCount;
-	vector<const path> keys;
-	vector<const string> files;
-	vector<unsigned long int> availableBytes;
+	vector<char*> keys;
+	vector<const char*> files;
 	vector<HANDLE> inPipes;
 	vector<HANDLE> outPipes;
 	void* tempBuffer;
-	
+	vector<ArgsForAsyncEncoder*> args;
+	char talkBytes[BLOCK_COUNT];
+	bool noDataError;
 public:	
 	
 	EncodedDataAccessor();
 	/**
 	Names of keys and data files.
 	*/
-	EncodedDataAccessor(vector<const path>* keys, vector<const string>* threads, vector<unsigned long int>* available);
+	EncodedDataAccessor* create(vector<const path>* keys, vector<const string>* threads, vector<unsigned long int>* available);
 
 	/**
 	Should be invoked before getData(...);
@@ -40,6 +43,8 @@ public:
 		[2i+1] - count of blocks to be read
 	*/
 	void getData(char* buffer, char* pointers, char blockSize);
+
+	bool getErrors();
 
 	/**
 	Alternative to Start() for testing.

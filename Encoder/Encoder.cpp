@@ -9,6 +9,7 @@
 #include "RandomGenerator.h"
 #include "EncodedDataAccessor.h"
 #include "LengthProducer.h"
+#include "Constants.h"
 using namespace std;
 using namespace boost ::filesystem;
 
@@ -44,7 +45,7 @@ int Encoder ::Start(vector<const string>* except, const  vector<const string>* o
 			}			
 		}		
 	}
-	lengther = LengthProducer(&targets, data_block);
+	lengther.create(&targets, data_block);
 	initialThreadValues = lengther.getAllAvailable();
 
 
@@ -66,11 +67,37 @@ int Encoder ::Start(vector<const string>* except, const  vector<const string>* o
 		verbalKeys.push_back(asker.askForVerbalKey(*it, basename(*it)));
 		threadNumberItaerator++;
 	}
-	dataAccessor = EncodedDataAccessor(&keys, &targets, &initialThreadValues);
-	randomer = RandomGenerator(data_block);
-	mapper = MapEncoder(&verbalKeys);
+	dataAccessor.create(&keys, &targets, &initialThreadValues);
+	dataAccessor.Start();
+	randomer.create(data_block);
+	mapper.create(&verbalKeys);
+	fopen_s(&outputFile, "some_name.extn", "wb");
+	runEncodingCycle();
 	return 0;
 };
+
+void Encoder ::runEncodingCycle()
+{
+	unsigned char threadCount = targets.size();
+	Lengthes whatShouldIRead = lengther.getNextLengthes();
+	char* buffer = new char[data_block * BLOCK_COUNT];
+	do
+	{
+		char pointers[BLOCK_COUNT*2];
+		unsigned char prevMapsLength = 0;
+		for (int i = 0; i < threadCount; i++)
+		{
+			pointers[2*i+1] = whatShouldIRead.answer[i].length;
+			pointers[2*i] = pointers[2*i+1] ? prevMapsLength : 0;
+			prevMapsLength += pointers[2*i+1];
+		}
+		dataAccessor.getData(buffer, pointers, data_block);
+	}while(whatShouldIRead.count > 0);
+	delete[] buffer; 
+
+};
+
+
 
 
 int Encoder ::countDataBlock(int percentage)
@@ -151,7 +178,7 @@ string Encoder ::EncoderInteractive ::askForVerbalKey(const string target, const
 			return previostAnswer;
 		}
 	}
-	cout << "What will be the password for " << target << "? (live blank for password" << proposal << ",  or !p to select previost)" <<endl;
+	cout << "What will be the password for " << target << "? (live blank for password " << proposal  <<endl;
 	cout << "Enter !f to select filenames as password for all future files" << endl;
 	if (!previostAnswer.empty())
 	{
@@ -213,7 +240,7 @@ path Encoder ::renameKey(path* oldPath, const string* pureName, unsigned char th
 	newName.append(".key");
 	path newPath = oldPath ->parent_path();
 	newPath /= newName;
-	if(exists(newPath))
+	if(exists(newPath) && newPath != *oldPath)
 	{
 		remove(newPath);		
 	}
@@ -221,4 +248,5 @@ path Encoder ::renameKey(path* oldPath, const string* pureName, unsigned char th
 	return newPath;
 };
 
-
+Encoder ::~Encoder()
+{}

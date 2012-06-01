@@ -5,14 +5,19 @@
 #include <limits.h>
 #include "logging.h"
 #include <boost\filesystem.hpp>
+#include "FilesystemHelper.h"
 using namespace boost ::filesystem;
 
-LengthProducer::LengthProducer(vector<const string>* fileNames, int blockSize)
+
+LengthProducer::LengthProducer()
+{}
+
+LengthProducer* LengthProducer::create(vector<const string>* fileNames, int blockSize)
 {
 	this ->numberOfFiles = fileNames ->size();
 	for(vector<const string> ::iterator fsObj = fileNames ->begin(); fsObj < fileNames ->end();fsObj++)
 	{
-		unsigned long int fsObjectSize = GetFSObjectSize(*fsObj);
+		unsigned long int fsObjectSize = GetFSObjectSize(&*fsObj);
 		unsigned long int blocksInObject = fsObjectSize / blockSize;
 		if (fsObjectSize % blockSize)
 		{
@@ -21,6 +26,7 @@ LengthProducer::LengthProducer(vector<const string>* fileNames, int blockSize)
 		bytesAvailable.push_back(blocksInObject);
 	}
 	this ->noData = false;
+	return this;
 }
 
 Lengthes LengthProducer ::getNextLengthes()
@@ -97,23 +103,7 @@ Lengthes LengthProducer ::getNextLengthes()
 	return toReturn;
 }
 
-unsigned long int LengthProducer ::GetFSObjectSize(string root)
-{
-	if (!is_directory(root))
-	{
-		return file_size(root);
-	}
-	recursive_directory_iterator end;
-	unsigned long int answer = 0;
-	for(recursive_directory_iterator it = recursive_directory_iterator(root); it != end; it++)
-	{
-		if(!is_directory(*it))
-		{
-			answer += file_size(*it);
-		}
-	}
-	return answer;
-};
+
 
 
 vector<unsigned long int> LengthProducer ::getAllAvailable()

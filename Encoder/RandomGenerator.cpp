@@ -6,9 +6,10 @@ RandomGenerator ::RandomGenerator()
 {};
 
 
-RandomGenerator ::RandomGenerator(unsigned char blockSize)
+RandomGenerator* RandomGenerator ::create(unsigned char blockSize)
 {
 	this ->blockSize = blockSize;
+	return this;
 };
 
 

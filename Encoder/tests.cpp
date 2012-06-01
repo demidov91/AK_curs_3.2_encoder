@@ -14,6 +14,7 @@
 #include "logging.h"
 #include "Encoder.h"
 #include "MapEncoder.h"
+#include "FilesystemHelper.h"
 using namespace std;
 
 
@@ -27,6 +28,7 @@ bool test_EnDecoder()
 	FILE* file;
 	HANDLE rPipe;
 	HANDLE wPipe;
+
 	
 	fopen_s(&file, "input.txt", "rb");
 	fseek(file, 0, SEEK_END);
@@ -74,18 +76,14 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 	HANDLE rPipe[2], wPipe[2];
 
 	CreatePipe(&rPipe[0], &wPipe[0], NULL, 5000); 
-	void* args[3];
-	args[0] = malloc(sizeof(char) * strlen("key1.txt") + 1);
-	strcpy((char*)(args[0]), "key1.txt");
-	args[1] = malloc(sizeof(char) * strlen(inp1) + 1);
-	strcpy((char*)(args[1]), inp1);
-	args[2] = &wPipe[0];
-
+	ArgsForAsyncEncoder* args1 = new ArgsForAsyncEncoder();
+	args1 ->key = "key1.txt";
+	args1 ->file = inp1;
+	args1 ->pipe = &wPipe[0];
+	char byteToTalk1 = 1;
+	args1 ->byteToTalk = &byteToTalk1;
 	
-	_beginthread(encode_async, 100, (void*)args); 
-
-
-	
+	_beginthread(encode_async, 100, (void*)args1); 
 
 	fopen_s(&file,inp2, "rb");
 	fseek(file, 0, SEEK_END);
@@ -94,12 +92,12 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 
 
 	CreatePipe(&rPipe[1], &wPipe[1], NULL, 5000); 
-	void* args2[3];
-	args2[0] = malloc(sizeof(char) * strlen("key2.txt") + 1);
-	strcpy((char*)(args2[0]), "key2.txt");
-	args2[1] = malloc(sizeof(char) * strlen(inp2) + 1);
-	strcpy((char*)(args2[1]), inp2);
-	args2[2] = &wPipe[1];
+	ArgsForAsyncEncoder* args2 = new ArgsForAsyncEncoder();
+	args2 ->key = "key2.txt";
+	args2 ->file = inp2;
+	args2 ->pipe = &wPipe[1];
+	char byteToTalk2 = 1;
+	args2 ->byteToTalk = &byteToTalk2;
 	_beginthread(encode_async, 100, args2); 
 
 	
@@ -152,10 +150,8 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 	}
 	outFile1.close();
 	outFile2.close();
-	free(args[0]);
-	free(args2[0]);
-	free(args[1]);
-	free(args2[1]);
+	delete args1;
+	delete args2;
 	CloseHandle(wPipe[0]);
 	CloseHandle(wPipe[1]);
 	CloseHandle(rPipe[0]);
@@ -273,7 +269,8 @@ void test_EncodedDataAccessor()
 	bytes.push_back(100);
 
 	test_EncodedDataAccessor_prepairFiles(names);
-	EncodedDataAccessor* dataAccessor = new EncodedDataAccessor(&keys, &names, &bytes);
+	EncodedDataAccessor* dataAccessor = new EncodedDataAccessor();
+	dataAccessor ->create(&keys, &names, &bytes);
 	dataAccessor ->__testStart();
 	char* buffer = new char[306];
 	__int8 pointers[6];
@@ -318,15 +315,15 @@ void test_LengthGenerator_GetFSObjectSize()
 {
 	vector<const string> names;
 	LengthProducer tester;
-	if (tester.__GetFSObjectSize(string("test/value_test1")) != 15)
+	if (GetFSObjectSize(&string("test/value_test1")) != 15)
 	{
 		log_error("test/value_test1 error");		
 	}
-	if (tester.__GetFSObjectSize(string("test/value_test2")) != 30)
+	if (GetFSObjectSize(&string("test/value_test2")) != 30)
 	{
 		log_error("test/value_test2 error");		
 	}
-	if (tester.__GetFSObjectSize(string("test/value_test3")) != 5)
+	if (GetFSObjectSize(&string("test/value_test3")) != 5)
 	{
 		log_error("test/value_test3 error");		
 	}
@@ -420,7 +417,8 @@ void Friendly ::test_MapEncoder_costructor()
 	keys.push_back("1");
 	keys.push_back("");
 	keys.push_back("2");
-	MapEncoder tester(&keys);
+	MapEncoder tester;
+	tester.create(&keys);
 	for(int i = 0; i < keys.size(); i++)
 	{
 		if(keys[i].compare(tester.threads[i] ->key))
@@ -457,7 +455,8 @@ void Friendly::test_LengthProducer_constructor()
 	lengthes.push_back(12988);
 	lengthes.push_back(25999);
 	test_LengthProducer_prepareFiles(&v_names, &lengthes);
-	LengthProducer producer(&v_names, 13);
+	LengthProducer producer;
+	producer.create(&v_names, 13);
 	if(producer.bytesAvailable[0] != 10000 || producer.bytesAvailable[1] != 1000 || producer.bytesAvailable[2] != 2000)
 	{
 		log_test("lengthProducer constructor");		
@@ -514,7 +513,8 @@ void Friendly::test_LengthProducer_getNext()
 	lengthes.push_back(12988);
 	lengthes.push_back(25999);
 	test_LengthProducer_prepareFiles(&v_names, &lengthes);
-	LengthProducer producer(&v_names, 13);
+	LengthProducer producer;
+	producer.create(&v_names, 13);
 	if(!test_LengthProducer_getNext_checkAnswer(&producer))
 	{
 		log_test("LengthProducer_getNext");

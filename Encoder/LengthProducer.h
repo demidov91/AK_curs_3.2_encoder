@@ -3,7 +3,7 @@
 #include "CommunicationalStructures.h"
 #include <string>
 #include "tests.h"
-#define BLOCK_COUNT 256
+#include "Constants.h"
 using namespace std;
 
 
@@ -15,30 +15,15 @@ private:
 	int blockSize;
 	bool noData;
 
-	unsigned long int GetFSObjectSize(string);
+	
 public:
-	LengthProducer(vector<const string>*, int blockSize);
+	LengthProducer();
+	LengthProducer* create(vector<const string>*, int blockSize);
 	Lengthes getNextLengthes();
 	vector<unsigned long int> getAllAvailable();
 	
 
-
-	/**
-	For tests only.
-	*/
-	LengthProducer()
-	{
-		
-	}
-
-	/**
-	For tests only.
-	*/
-	unsigned long int __GetFSObjectSize(string inp)
-	{
-		return GetFSObjectSize(inp);
-	};
-
+	
 	friend Friendly;
 };
 

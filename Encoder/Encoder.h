@@ -24,6 +24,7 @@ private:
 	EncodedDataAccessor dataAccessor;
 	RandomGenerator randomer;
 	MapEncoder mapper;
+	FILE* outputFile;
 
 	/**
 	1 + 512 + 256 + 256*x
@@ -37,6 +38,10 @@ private:
 	void formCollectionOfAvailableKeys(const char*);
 	path generateKeyForThread(const string*, unsigned char);
 	path renameKey(path* oldPath, const string* ,unsigned char thread);
+	/**
+	Run after lengther, dataAccessor, randomer, mapper and outputFile are created and configured. 
+	*/
+	void runEncodingCycle();
 
 	class EncoderInteractive
 	{
@@ -63,7 +68,7 @@ public:
 
 	int Start(vector<const string>* except, const  vector<const string>* only);
 
-	
+	~Encoder();
 
 
 	/**
