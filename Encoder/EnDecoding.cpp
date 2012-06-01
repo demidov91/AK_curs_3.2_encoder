@@ -51,7 +51,7 @@ void encode_async(void* in_args)
 	file = fopen(args ->file, "rb");
 	encode(file,args ->pipe);
 	fclose(file);
-	(*args ->byteToTalk) = 0;
+	(*(args ->byteToTalk)) = 0;
 }
 
 

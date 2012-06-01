@@ -1,1 +1,3 @@
 #define BLOCK_COUNT 256
+#define MAX_FILE_COUNT 256
+#define MAX_BLOCK_SIZE 256

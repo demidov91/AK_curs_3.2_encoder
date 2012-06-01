@@ -80,7 +80,7 @@ void Encoder ::runEncodingCycle()
 {
 	unsigned char threadCount = targets.size();
 	Lengthes whatShouldIRead = lengther.getNextLengthes();
-	char* buffer = new char[data_block * BLOCK_COUNT];
+	char* dataBuffer = new char[data_block * BLOCK_COUNT];
 	do
 	{
 		char pointers[BLOCK_COUNT*2];
@@ -91,9 +91,10 @@ void Encoder ::runEncodingCycle()
 			pointers[2*i] = pointers[2*i+1] ? prevMapsLength : 0;
 			prevMapsLength += pointers[2*i+1];
 		}
-		dataAccessor.getData(buffer, pointers, data_block);
+		dataAccessor.getData(dataBuffer, pointers, data_block);
+		whatShouldIRead.count--;
 	}while(whatShouldIRead.count > 0);
-	delete[] buffer; 
+	delete[] dataBuffer; 
 
 };
 

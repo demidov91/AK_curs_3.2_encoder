@@ -9,8 +9,8 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	beginTests();
-	return 0;
+	//beginTests();
+	//return 0;
 	if (argc < 2)
 	{
 		cerr << NOT_ENOUGH_PARAMETERS << endl;

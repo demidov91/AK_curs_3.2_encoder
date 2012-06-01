@@ -37,13 +37,13 @@ void EncodedDataAccessor ::Start()
 	for(int i = 0; i < fileCount; i++)
 	{
 		CreatePipe(&outPipes[i], &inPipes[i], NULL, MAX_THREAD_SIZE);
-		ArgsForAsyncEncoder* argsForEncoding = new ArgsForAsyncEncoder();
+		ArgsForAsyncEncoder* argsForEncoding = (ArgsForAsyncEncoder*)malloc(sizeof(ArgsForAsyncEncoder));
 		argsForEncoding ->key = keys[i];
 		argsForEncoding ->file = files[i];
 		argsForEncoding ->pipe = &inPipes[i];
 		argsForEncoding ->byteToTalk = &talkBytes[i];
-		args.push_back(argsForEncoding);
-		_beginthread(encode_async, 100, args.back());
+		args[i] = argsForEncoding;
+		_beginthread(encode_async, 100, args[i]);
 	}
 }
 
@@ -51,15 +51,18 @@ void EncodedDataAccessor ::getData(char* buffer, char* pointers, char blockSize)
 {
 	for(int i = 0; i < fileCount; i++)
 	{
-		char fileNumber = pointers[2*i];
+		char fileNumber = i;
 		int lengthToRead = pointers[2*i+1] * blockSize;
 		int remainsToRead = lengthToRead;
 		DWORD wasAvailable = 0;
 		DWORD canRead = 0;
+		long int win = 0;
+		bool threadWorkedBeforeAnswer = talkBytes[i];
 		while(remainsToRead > 0)
-		{
-			if (wasAvailable <= 0)
+		{			
+			if (wasAvailable == 0)
 			{
+				threadWorkedBeforeAnswer = talkBytes[i] != 0;
 				PeekNamedPipe(outPipes[fileNumber], tempBuffer, remainsToRead, &canRead, &wasAvailable, NULL);
 			}
 			else 
@@ -75,9 +78,13 @@ void EncodedDataAccessor ::getData(char* buffer, char* pointers, char blockSize)
 			}
 			else
 			{
-				if(!talkBytes[i])
+				if(!threadWorkedBeforeAnswer)
 				{
 					break;
+				}
+				else
+				{
+					Sleep(1000);
 				}
 			}
 			
@@ -96,7 +103,6 @@ void EncodedDataAccessor ::__testStart()
 	for(int i = 0; i < fileCount; i++)
 	{
 		CreatePipe(&outPipes[i], &inPipes[i], NULL, 200);
-		void* argsForEncoding[3];
 		FILE* file = fopen(files[i], "rb");
 		char buffer[102];
 		fread(buffer, 1, 100, file);
@@ -104,13 +110,16 @@ void EncodedDataAccessor ::__testStart()
 		WriteFile(inPipes[i], buffer, 100, &temp, NULL);		
 		fclose(file);
 		talkBytes[i] = 0;
+		ArgsForAsyncEncoder* argsForEncoding = (ArgsForAsyncEncoder*)malloc(sizeof(ArgsForAsyncEncoder));
+		argsForEncoding ->key = keys[i];
+		argsForEncoding ->file = files[i];
+		argsForEncoding ->pipe = &inPipes[i];
+		argsForEncoding ->byteToTalk = &talkBytes[i];
+		args[i] = argsForEncoding;
 	}
 }
 
-bool EncodedDataAccessor::getErrors()
-{
-	return noDataError;
-}
+
 
 EncodedDataAccessor::~EncodedDataAccessor(void)
 {	
@@ -118,10 +127,9 @@ EncodedDataAccessor::~EncodedDataAccessor(void)
 	{
 		free(tempBuffer);
 	}
-	for(vector<ArgsForAsyncEncoder*> ::iterator it = args.begin(); it != args.end(); it++)
+	for(int i = 0; i < fileCount; i++)
 	{
-		calloc(strlen((*it) ->key), 1);
-		delete *it;
+		free(keys[i]);
+		free(args[i]);
 	}
-	
 }

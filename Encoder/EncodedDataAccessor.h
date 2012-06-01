@@ -8,8 +8,7 @@
 using namespace std;
 using namespace boost ::filesystem;
 
-#define MAX_FILE_COUNT 256
-#define MAX_BLOCK_SIZE 32
+
 #define MAX_THREAD_SIZE MAX_FILE_COUNT*MAX_BLOCK_SIZE
 
 class EncodedDataAccessor
@@ -21,7 +20,7 @@ private:
 	vector<HANDLE> inPipes;
 	vector<HANDLE> outPipes;
 	void* tempBuffer;
-	vector<ArgsForAsyncEncoder*> args;
+	ArgsForAsyncEncoder* args[MAX_FILE_COUNT];
 	char talkBytes[BLOCK_COUNT];
 	bool noDataError;
 public:	
@@ -38,9 +37,8 @@ public:
 	void Start();
 
 	/**
-	pointers - 'fileCount' pairs where: 
-		[2i] - number of file
-		[2i+1] - count of blocks to be read
+	pointers - 2* fileCount pairs with: 
+		[2i+1] - count of blocks to be read for i-th thred
 	*/
 	void getData(char* buffer, char* pointers, char blockSize);
 

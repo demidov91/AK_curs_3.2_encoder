@@ -18,9 +18,9 @@ struct Lengthes
 };
 
 
-class ArgsForAsyncEncoder
+struct ArgsForAsyncEncoder
 {
-public:
+
 	const char* key;
 	const char* file;
 	PHANDLE pipe;

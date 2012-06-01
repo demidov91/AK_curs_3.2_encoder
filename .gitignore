@@ -18,3 +18,4 @@ Encoder/test/*
 external dependences/*
 *.key
 *.extn
+*.opensdf
