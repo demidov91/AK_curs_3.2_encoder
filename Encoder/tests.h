@@ -1,5 +1,6 @@
 #pragma once
 
+
 class Friendly
 {
 public:
@@ -11,7 +12,10 @@ public:
 	void static test_EncodedDataAccessor_getNext();
 	void static test_LengthProducer_constructor();
 	void static test_LengthProducer_getNext();
+	void static test_RandomGenerator_shuffle();
+	void static test_ThreadMapEncoder_encodeByte();
 };
 
 
 void beginTests();
+void makeBlankKey();

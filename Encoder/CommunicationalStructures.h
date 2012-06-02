@@ -3,6 +3,8 @@
 #include <Windows.h>
 using namespace std;
 
+
+
 struct ThreadLengthPair
 {
 	ThreadLengthPair(int, int);
@@ -25,4 +27,6 @@ struct ArgsForAsyncEncoder
 	const char* file;
 	PHANDLE pipe;
 	char* byteToTalk;
+	
 };
+

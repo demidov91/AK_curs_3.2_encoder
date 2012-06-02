@@ -15,6 +15,7 @@ LengthProducer::LengthProducer()
 LengthProducer* LengthProducer::create(vector<const string>* fileNames, int blockSize)
 {
 	this ->numberOfFiles = fileNames ->size();
+	initialBlocksCount = 0;
 	for(vector<const string> ::iterator fsObj = fileNames ->begin(); fsObj < fileNames ->end();fsObj++)
 	{
 		unsigned long int fsObjectSize = GetFSObjectSize(&*fsObj);
@@ -24,6 +25,7 @@ LengthProducer* LengthProducer::create(vector<const string>* fileNames, int bloc
 			blocksInObject++;			
 		}
 		bytesAvailable.push_back(blocksInObject);
+		initialBlocksCount += blocksInObject;
 	}
 	this ->noData = false;
 	return this;
@@ -87,9 +89,9 @@ Lengthes LengthProducer ::getNextLengthes()
 	for(int i = 0; i < numberOfFiles; i++)
 	{
 		bytesAvailable[i] -= steps*sizes[i];
-		noData |= bytesAvailable[i];
+		noData |= bytesAvailable[i];		
 	}
-	noData = !noData;
+	noData = !noData;	 
 	vector<ThreadLengthPair> map;
 	for(int i = 0; i <numberOfFiles; i++)
 	{
@@ -103,13 +105,16 @@ Lengthes LengthProducer ::getNextLengthes()
 	return toReturn;
 }
 
-
-
-
-vector<unsigned long int> LengthProducer ::getAllAvailable()
+float LengthProducer:: getProcessedPart()
 {
-	return bytesAvailable;
-};
+	unsigned long int currentSum = 0;
+	for (int i = 0; i < numberOfFiles; i++)
+	{
+		currentSum += bytesAvailable[i];		
+	}
+	return (float)currentSum / initialBlocksCount;
+}
+
 
 
 

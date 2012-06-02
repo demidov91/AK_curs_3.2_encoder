@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include "tests.h"
+#include "Constants.h"
 using namespace std;
 
 class MapEncoder
@@ -21,6 +22,7 @@ private:
 	friend Friendly;
 	};	
 	vector<ThreadMapEncoder*> threads;
+	int threadCount;
 public:
 	MapEncoder();
 	MapEncoder* create(vector<const string>*);

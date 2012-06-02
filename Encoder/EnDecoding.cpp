@@ -3,7 +3,70 @@
 #include <iostream>
 #include <Windows.h>
 #include "CommunicationalStructures.h"
+#include <boost\filesystem.hpp>
+#include <algorithm>
 using namespace std;
+using namespace boost ::filesystem;
+
+CRITICAL_SECTION crSection;
+
+void initCrSection()
+{
+	InitializeCriticalSectionAndSpinCount(&crSection, 0x00000400);	
+}
+
+void destroyCrSection()
+{
+	DeleteCriticalSection(&crSection);
+}
+
+
+void encode_element(const path* root, PHANDLE output)
+{
+	DWORD varForProcessedBytes;	
+	char fsObjectName[256];
+	strcpy(fsObjectName, root ->filename().string().c_str());
+	char nameLength = strlen(fsObjectName);
+	if(!is_directory(*root))
+	{
+		unsigned char filetype = FILE_BYTE;
+		unsigned long int size = file_size(*root);
+		
+		WriteFile(*output, &filetype, 1, &varForProcessedBytes, NULL);
+		WriteFile(*output, &size, sizeof(unsigned long int), &varForProcessedBytes, NULL);
+		WriteFile(*output, &nameLength, sizeof(nameLength), &varForProcessedBytes, NULL);
+		WriteFile(*output, fsObjectName, nameLength, &varForProcessedBytes, NULL);
+		FILE* toEncode;
+		char fileToEncode[256];
+		strcpy(fileToEncode, root ->string().c_str());
+		fopen_s(&toEncode, fileToEncode, "rb");
+		encode(toEncode, output);
+		fclose(toEncode);
+	}
+	else
+	{
+		recursive_directory_iterator begin(*root), end;
+		int innerCount = count_if(begin, end,
+    [](const directory_entry & d) {
+		return !is_directory(d.path());});
+		DWORD varForProcessedBytes;
+		WriteFile(*output, (LPCVOID)DIRECTORY_BYTE, 1, &varForProcessedBytes, NULL);
+		WriteFile(*output, (LPCVOID)innerCount, sizeof(innerCount), &varForProcessedBytes, NULL);
+		WriteFile(*output, &nameLength, sizeof(nameLength), &varForProcessedBytes, NULL);
+		WriteFile(*output, fsObjectName, nameLength, &varForProcessedBytes, NULL);
+		for(recursive_directory_iterator it(*root); it != recursive_directory_iterator(); ++it)
+		{
+			if(!is_directory(*it))
+			{
+				encode_element(&(it ->path()), output);
+			}
+		}
+					
+	}
+
+};
+
+
 
 
 void encode_async(void* in_args)
@@ -47,10 +110,13 @@ void encode_async(void* in_args)
 		movupd xmm6, keyPart
 	}
 	fclose(file);
-
-	file = fopen(args ->file, "rb");
-	encode(file,args ->pipe);
-	fclose(file);
+	char c_str_root[256];
+	strcpy(c_str_root, args ->file);
+	EnterCriticalSection(&crSection); 
+	path* root = new path(string(c_str_root));
+	LeaveCriticalSection(&crSection); 
+	encode_element(root, args ->pipe);
+	delete root;
 	(*(args ->byteToTalk)) = 0;
 }
 

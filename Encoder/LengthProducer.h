@@ -14,16 +14,13 @@ private:
 	vector<unsigned long int> bytesAvailable;
 	int blockSize;
 	bool noData;
-
-	
+	unsigned long int initialBlocksCount;
 public:
 	LengthProducer();
 	LengthProducer* create(vector<const string>*, int blockSize);
 	Lengthes getNextLengthes();
-	vector<unsigned long int> getAllAvailable();
-	
+	float getProcessedPart();
 
-	
 	friend Friendly;
 };
 

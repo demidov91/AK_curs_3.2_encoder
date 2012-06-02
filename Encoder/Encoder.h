@@ -19,7 +19,6 @@ private:
 	list<path> availableKeys;
 	vector<const path> keys;
 	vector<const string> verbalKeys;
-	vector<unsigned long int> initialThreadValues; 
 	LengthProducer lengther;
 	EncodedDataAccessor dataAccessor;
 	RandomGenerator randomer;
@@ -39,10 +38,10 @@ private:
 	path generateKeyForThread(const string*, unsigned char);
 	path renameKey(path* oldPath, const string* ,unsigned char thread);
 	/**
-	Run after lengther, dataAccessor, randomer, mapper and outputFile are created and configured. 
+	Run after lengther, dataAccessor, randomer, mapper and outputFile are created and configured. Arguement - number of threads.
 	*/
-	void runEncodingCycle();
-
+	void runEncodingCycle(BYTE);
+	void tellPercentageDone(float);
 	class EncoderInteractive
 	{
 	private:
@@ -64,7 +63,7 @@ public:
 	Parameter size supposed to be used like a percentage of value of output file in comparison to input sum file values.
 	Returns number of encoded files.
 	*/
-	int Start(vector<const string>* except, const  vector<const string>* only, char size);
+	int Start(vector<const string>* except, const  vector<const string>* only, int size);
 
 	int Start(vector<const string>* except, const  vector<const string>* only);
 

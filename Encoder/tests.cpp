@@ -15,6 +15,7 @@
 #include "Encoder.h"
 #include "MapEncoder.h"
 #include "FilesystemHelper.h"
+#include "RandomGenerator.h"
 using namespace std;
 
 
@@ -63,10 +64,40 @@ bool test_EnDecoder()
 
 }
 
+void test_ReadToBuffer(HANDLE pipe, char*buffer, int size)
+{
+	DWORD wasAvailable = 0;
+	while(size)
+	{
+		DWORD toRead = 0;
+		DWORD bytesProcessed = 0;			
+		
+		if(wasAvailable < size)
+		{
+			PeekNamedPipe(pipe, buffer, size, &toRead, &wasAvailable, NULL);			
+		}
+		else
+		{
+			toRead = size;			
+		}		
+		if (!toRead)
+		{
+			Sleep(1000);
+		}
+		else{
+		ReadFile(pipe,buffer, toRead, &bytesProcessed, NULL);
+		wasAvailable -= toRead;
+		size -= toRead;
+		buffer += toRead;	
+		}
+	}
+
+}
+
 
 void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char* outp1, const char* outp2)
 {
-	
+	initCrSection();
 	FILE* file;
 	fopen_s(&file, inp1, "rb");
 	fseek(file, 0, SEEK_END);
@@ -75,15 +106,14 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 
 	HANDLE rPipe[2], wPipe[2];
 
-	CreatePipe(&rPipe[0], &wPipe[0], NULL, 5000); 
-	ArgsForAsyncEncoder* args1 = new ArgsForAsyncEncoder();
+	CreatePipe(&rPipe[0], &wPipe[0], NULL, 100000000); 
+	ArgsForAsyncEncoder* args1 = (ArgsForAsyncEncoder*)malloc(sizeof(ArgsForAsyncEncoder));
 	args1 ->key = "key1.txt";
 	args1 ->file = inp1;
 	args1 ->pipe = &wPipe[0];
 	char byteToTalk1 = 1;
 	args1 ->byteToTalk = &byteToTalk1;
-	
-	_beginthread(encode_async, 100, (void*)args1); 
+	_beginthread(encode_async, 10000, (void*)args1); 
 
 	fopen_s(&file,inp2, "rb");
 	fseek(file, 0, SEEK_END);
@@ -91,71 +121,91 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 	fclose(file);
 
 
-	CreatePipe(&rPipe[1], &wPipe[1], NULL, 5000); 
-	ArgsForAsyncEncoder* args2 = new ArgsForAsyncEncoder();
+	CreatePipe(&rPipe[1], &wPipe[1], NULL, 100000000); 
+	ArgsForAsyncEncoder* args2 = (ArgsForAsyncEncoder*)malloc(sizeof(ArgsForAsyncEncoder));
 	args2 ->key = "key2.txt";
 	args2 ->file = inp2;
 	args2 ->pipe = &wPipe[1];
 	char byteToTalk2 = 1;
 	args2 ->byteToTalk = &byteToTalk2;
-	_beginthread(encode_async, 100, args2); 
+	_beginthread(encode_async, 10000, args2); 
 
 	
 	ofstream outFile1(outp1, ostream ::binary);
 	ofstream outFile2(outp2, ostream ::binary);
-	const int BUFFER_SIZE = 100;
+	
+	unsigned char oneByteBuffer = 0;
+	unsigned long int fileLengthBuffer = 0;
+	test_ReadToBuffer(rPipe[0],(char*)&oneByteBuffer, 1);
+	if (oneByteBuffer != FILE_BYTE)
+	{
+		log_test("async encoding");
+		return;
+	}
+	test_ReadToBuffer(rPipe[0],(char*)&fileLengthBuffer, 4);
+	if (fileLengthBuffer != size1)
+	{
+		log_test("async encoding");
+		return;
+	}
+	test_ReadToBuffer(rPipe[0],(char*)&oneByteBuffer, 1);
+	if (oneByteBuffer < 1)
+	{
+		log_test("async encoding");
+		return;
+	}
+	char forFilename[257];
+	test_ReadToBuffer(rPipe[0], forFilename, oneByteBuffer);
+	forFilename[oneByteBuffer] = 0;
+	if(strcmp(path(inp1).filename().string().c_str() ,forFilename))
+	{
+		log_test("async encoding");
+		return;			
+	}
+	const int BUFFER_SIZE = 200000;
 	char buffer[BUFFER_SIZE];
-	DWORD wasAvailable[2];
-	for(int i = 0; i < 2; i++)
-	{
-		wasAvailable[i] = 0;
-	}
-	while(size1 > 0 || size2 > 0)
-	{
-		DWORD toRead;
-		DWORD bytesProcessed;			
-		if(size1 > 0)
-		{
-			if(wasAvailable[0] < BUFFER_SIZE)
-			{
-				PeekNamedPipe(rPipe[0], buffer, BUFFER_SIZE, &toRead, &wasAvailable[0], NULL);			
-			}
-			else
-			{
-				toRead = BUFFER_SIZE;			
-			}
-		
-			ReadFile(rPipe[0],buffer, toRead, &bytesProcessed, NULL);
-			wasAvailable[0] -= toRead;
-			outFile1.write(buffer, bytesProcessed);
-			size1 -= toRead;
-		}
-
-		if(size2 > 0)
-		{
-			if(wasAvailable[1] < BUFFER_SIZE)
-			{
-				PeekNamedPipe(rPipe[1], buffer, BUFFER_SIZE, &toRead, &wasAvailable[1], NULL);			
-			}
-			else
-			{
-				toRead = BUFFER_SIZE;			
-			}
-		
-			ReadFile(rPipe[1],buffer, toRead, &bytesProcessed, NULL);
-			wasAvailable[1] -= toRead;
-			outFile2.write(buffer, bytesProcessed);
-			size2 -= toRead;
-		}
-	}
+	test_ReadToBuffer(rPipe[0], buffer, size1);
+	outFile1.write(buffer, size1);
 	outFile1.close();
+
+
+	test_ReadToBuffer(rPipe[1],(char*)&oneByteBuffer, 1);
+	if (oneByteBuffer != FILE_BYTE)
+	{
+		log_test("async encoding");
+		return;
+	}
+	test_ReadToBuffer(rPipe[1],(char*)&fileLengthBuffer, 4);
+	if (fileLengthBuffer != size2)
+	{
+		log_test("async encoding");
+		return;
+	}
+	test_ReadToBuffer(rPipe[1],(char*)&oneByteBuffer, 1);
+	if (oneByteBuffer < 1)
+	{
+		log_test("async encoding");
+		return;
+	}
+	test_ReadToBuffer(rPipe[1], forFilename, oneByteBuffer);
+	forFilename[oneByteBuffer] = 0;
+	if(strcmp(path(inp2).filename().string().c_str() ,forFilename))
+	{
+		log_test("async encoding");
+		return;			
+	}
+	test_ReadToBuffer(rPipe[1], buffer, size2);
+	outFile2.write(buffer, size2);
 	outFile2.close();
-	delete args1;
-	delete args2;
+
+	
+	free(args1);
+	free(args2);
 	CloseHandle(wPipe[0]);
 	CloseHandle(wPipe[1]);
 	CloseHandle(rPipe[0]);
-	CloseHandle(rPipe[1]);
+	CloseHandle(rPipe[1]);	
+	destroyCrSection();
 }
 
 
@@ -201,7 +251,7 @@ void test_EncodedDataAccessor_prepairFiles(vector<const string> names)
 
 
 
-void test_EncodedDataAccessor_genPointers(char* pointers, char* lengthes)
+void test_EncodedDataAccessor_genPointers(BYTE* pointers, BYTE* lengthes)
 {
 	for(char i = 0; i < 3; i++)
 	{
@@ -211,7 +261,7 @@ void test_EncodedDataAccessor_genPointers(char* pointers, char* lengthes)
 }
 
 
-void test_EncodedDataAccessor_checkData(char* buffer)
+void test_EncodedDataAccessor_checkData(BYTE* buffer)
 {
 	bool ok = true;
 	for(int i = 0; i < 9; i++)
@@ -263,18 +313,15 @@ void test_EncodedDataAccessor()
 	keys.push_back(path());
 	keys.push_back(path());
 	keys.push_back(path());
-	vector<unsigned long int> bytes;
-	bytes.push_back(100);
-	bytes.push_back(100);
-	bytes.push_back(100);
+	
 
 	test_EncodedDataAccessor_prepairFiles(names);
 	EncodedDataAccessor* dataAccessor = new EncodedDataAccessor();
-	dataAccessor ->create(&keys, &names, &bytes);
+	dataAccessor ->create(&keys, &names);
 	dataAccessor ->__testStart();
-	char* buffer = new char[306];
-	__int8 pointers[6];
-	char lengthes[] = {3, 27, 30};
+	BYTE* buffer = new BYTE[306];
+	BYTE pointers[6];
+	BYTE lengthes[] = {3, 27, 30};
 	test_EncodedDataAccessor_genPointers(pointers, lengthes);
 	dataAccessor ->getData(buffer, pointers, 3);
 	buffer += 180;
@@ -315,15 +362,15 @@ void test_LengthGenerator_GetFSObjectSize()
 {
 	vector<const string> names;
 	LengthProducer tester;
-	if (GetFSObjectSize(&string("test/value_test1")) != 15)
+	if (GetFSObjectSize(&string("test/value_test1")) != 68)
 	{
 		log_error("test/value_test1 error");		
 	}
-	if (GetFSObjectSize(&string("test/value_test2")) != 30)
+	if (GetFSObjectSize(&string("test/value_test2")) != 119)
 	{
 		log_error("test/value_test2 error");		
 	}
-	if (GetFSObjectSize(&string("test/value_test3")) != 5)
+	if (GetFSObjectSize(&string("test/value_test3")) != 22)
 	{
 		log_error("test/value_test3 error");		
 	}
@@ -451,9 +498,9 @@ void Friendly::test_LengthProducer_constructor()
 		v_names.push_back(string(names[i]));
 	}
 	vector<int> lengthes;
-	lengthes.push_back(130000);
-	lengthes.push_back(12988);
-	lengthes.push_back(25999);
+	lengthes.push_back(129980);
+	lengthes.push_back(12968);
+	lengthes.push_back(25979);
 	test_LengthProducer_prepareFiles(&v_names, &lengthes);
 	LengthProducer producer;
 	producer.create(&v_names, 13);
@@ -509,9 +556,9 @@ void Friendly::test_LengthProducer_getNext()
 		v_names.push_back(string(names[i]));
 	}
 	vector<int> lengthes;
-	lengthes.push_back(130000);
-	lengthes.push_back(12988);
-	lengthes.push_back(25999);
+	lengthes.push_back(129980);
+	lengthes.push_back(12968);
+	lengthes.push_back(25979);
 	test_LengthProducer_prepareFiles(&v_names, &lengthes);
 	LengthProducer producer;
 	producer.create(&v_names, 13);
@@ -521,6 +568,66 @@ void Friendly::test_LengthProducer_getNext()
 	}	
 }
 
+
+void Friendly ::test_RandomGenerator_shuffle()
+{
+	RandomGenerator tester;
+	tester.create(2);
+	BYTE data[BLOCK_COUNT*2];
+	for(int i = 0; i < BLOCK_COUNT; i++)
+	{
+		data[2*i]=i;
+		data[2*i+1]=i;
+	}
+	tester.shuffle(data);
+	char hits[BLOCK_COUNT];
+	memset(hits, 0, 256);
+	for(int i = 0; i < BLOCK_COUNT; i++)
+	{
+		if(data[tester.map[i]*2] != i || data[tester.map[i]*2 + 1] != i || hits[tester.map[i]])
+		{
+			log_test("RandomGenerator shuffle");
+			return;
+		}
+		hits[tester.map[i]] = 1;
+	}
+}
+
+void Friendly ::test_ThreadMapEncoder_encodeByte()
+{
+	char* original = "Mother was washing window";
+	int n = strlen(original) + 1;
+	char* forTest = new char[n];
+	memcpy(forTest, original, n);
+	
+	for (int twoWay = 0; twoWay < 2; twoWay++)
+	{
+		MapEncoder ::ThreadMapEncoder* tester = new MapEncoder ::ThreadMapEncoder(&string("12345"));
+		for (int i = 0; i < n; i++)
+		{
+			tester ->encodeByte(&forTest[i]);			
+		}
+		delete tester;
+	}
+	if(strcmp(original, forTest))
+	{
+		log_test("ThreadMapEncoder_encodeByte");
+		return;
+	}
+	
+	delete[] forTest;
+}
+
+void makeBlankKey()
+{
+	FILE* file = fopen("test\\blankKey.key", "wb");
+	for(int i = 0; i < 112; i++)
+	{
+		char zero = 0;
+		fwrite(&zero, 1, 1, file);
+	}
+	fclose(file);
+}
 
 
 void beginTests()
@@ -537,5 +644,7 @@ void beginTests()
 	Friendly ::test_MapEncoder_costructor();
 	Friendly ::test_LengthProducer_constructor();
 	Friendly ::test_LengthProducer_getNext();
+	Friendly ::test_RandomGenerator_shuffle();
+	Friendly ::test_ThreadMapEncoder_encodeByte();
 	getch();
 }

@@ -9,6 +9,8 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+	//makeBlankKey();
+	//return 0;
 	//beginTests();
 	//return 0;
 	if (argc < 2)
@@ -67,9 +69,8 @@ int main(int argc, char** argv)
 			}
 		}
 		Encoder* processor = new Encoder();
-		int numberOfFiles = size ? processor ->Start(&except, &only, size) : processor ->Start(&except, &only);
+		int numberOfFiles = size!=0 ? processor ->Start(&except, &only, size) : processor ->Start(&except, &only);
 		cout << ENCODED_SUCCESSFULLY << endl;
-		cout << numberOfFiles << " files encoded." << endl;
 		delete processor;
 	}
 	else

@@ -1,13 +1,11 @@
 #pragma once
 #include <stdio.h>
 #include <Windows.h>
+#define DIRECTORY_BYTE 1
+#define FILE_BYTE 2
 using namespace std;
 
-
-/**
-in_args[0] - key file name
-in_args[1] - inner file name
-in_args[2] - outer pipe handle
-*/
+void initCrSection();
+void destroyCrSection();
 void encode_async(void* in_args);
 void encode(FILE* file, PHANDLE output);

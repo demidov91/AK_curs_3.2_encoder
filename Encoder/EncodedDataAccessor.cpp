@@ -11,10 +11,11 @@
 EncodedDataAccessor::EncodedDataAccessor()
 {
 	tempBuffer = malloc(0);
+	threadsStarted = false;
 };
 
 
-EncodedDataAccessor* EncodedDataAccessor::create(vector<const path>* keys, vector<const string>* threads, vector<unsigned long int>* availableBytes)
+EncodedDataAccessor* EncodedDataAccessor::create(vector<const path>* keys, vector<const string>* threads)
 {
 	this ->fileCount = threads ->size();
 	this ->keys.resize(fileCount, NULL);
@@ -34,6 +35,8 @@ EncodedDataAccessor* EncodedDataAccessor::create(vector<const path>* keys, vecto
 
 void EncodedDataAccessor ::Start()
 {
+	initCrSection();
+	threadsStarted = true;
 	for(int i = 0; i < fileCount; i++)
 	{
 		CreatePipe(&outPipes[i], &inPipes[i], NULL, MAX_THREAD_SIZE);
@@ -47,7 +50,7 @@ void EncodedDataAccessor ::Start()
 	}
 }
 
-void EncodedDataAccessor ::getData(char* buffer, char* pointers, char blockSize)
+void EncodedDataAccessor ::getData(BYTE* buffer, BYTE* pointers, char blockSize)
 {
 	for(int i = 0; i < fileCount; i++)
 	{
@@ -131,5 +134,9 @@ EncodedDataAccessor::~EncodedDataAccessor(void)
 	{
 		free(keys[i]);
 		free(args[i]);
+	}
+	if(threadsStarted)
+	{
+		destroyCrSection();
 	}
 }

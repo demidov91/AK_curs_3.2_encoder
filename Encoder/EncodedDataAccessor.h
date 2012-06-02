@@ -22,14 +22,14 @@ private:
 	void* tempBuffer;
 	ArgsForAsyncEncoder* args[MAX_FILE_COUNT];
 	char talkBytes[BLOCK_COUNT];
-	bool noDataError;
+	bool threadsStarted;
 public:	
 	
 	EncodedDataAccessor();
 	/**
 	Names of keys and data files.
 	*/
-	EncodedDataAccessor* create(vector<const path>* keys, vector<const string>* threads, vector<unsigned long int>* available);
+	EncodedDataAccessor* create(vector<const path>* keys, vector<const string>* threads);
 
 	/**
 	Should be invoked before getData(...);
@@ -40,7 +40,7 @@ public:
 	pointers - 2* fileCount pairs with: 
 		[2i+1] - count of blocks to be read for i-th thred
 	*/
-	void getData(char* buffer, char* pointers, char blockSize);
+	void getData(BYTE* buffer, BYTE* pointers, char blockSize);
 
 	bool getErrors();
 

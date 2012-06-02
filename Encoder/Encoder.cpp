@@ -22,7 +22,7 @@ int Encoder ::Start(vector<const string>* except, const  vector<const string>* o
 };
 
 
-int Encoder ::Start(vector<const string>* except, const  vector<const string>* only, char size)
+int Encoder ::Start(vector<const string>* except, const  vector<const string>* only, int size)
 {
 	data_block = this ->countDataBlock(size);
 	if (data_block < 1)
@@ -46,8 +46,7 @@ int Encoder ::Start(vector<const string>* except, const  vector<const string>* o
 		}		
 	}
 	lengther.create(&targets, data_block);
-	initialThreadValues = lengther.getAllAvailable();
-
+	
 
 	int threadNumberItaerator = 0;
 	EncoderInteractive asker;
@@ -63,28 +62,33 @@ int Encoder ::Start(vector<const string>* except, const  vector<const string>* o
 		{
 			key = renameKey(&key, &*it, threadNumberItaerator);
 		}
-		keys.push_back(key);
-		verbalKeys.push_back(asker.askForVerbalKey(*it, basename(*it)));
+		keys.push_back(key);		
 		threadNumberItaerator++;
 	}
-	dataAccessor.create(&keys, &targets, &initialThreadValues);
+	dataAccessor.create(&keys, &targets);
 	dataAccessor.Start();
+	for(vector<const string> ::iterator it = targets.begin(); it < targets.end(); it++)
+	{
+		verbalKeys.push_back(asker.askForVerbalKey(*it, basename(*it)));
+	}	
 	randomer.create(data_block);
 	mapper.create(&verbalKeys);
+	BYTE threadsCount = targets.size();
 	fopen_s(&outputFile, "some_name.extn", "wb");
-	runEncodingCycle();
+	fwrite(&threadsCount, 1, 1, outputFile);
+	runEncodingCycle(threadsCount);
+	fclose(outputFile);
 	return 0;
 };
 
-void Encoder ::runEncodingCycle()
+void Encoder ::runEncodingCycle(BYTE threadCount)
 {
-	unsigned char threadCount = targets.size();
 	Lengthes whatShouldIRead = lengther.getNextLengthes();
-	char* dataBuffer = new char[data_block * BLOCK_COUNT];
+	BYTE* dataBuffer = new BYTE[data_block * BLOCK_COUNT];
 	do
 	{
-		char pointers[BLOCK_COUNT*2];
-		unsigned char prevMapsLength = 0;
+		BYTE pointers[BLOCK_COUNT*2];
+		BYTE prevMapsLength = 0;
 		for (int i = 0; i < threadCount; i++)
 		{
 			pointers[2*i+1] = whatShouldIRead.answer[i].length;
@@ -92,7 +96,28 @@ void Encoder ::runEncodingCycle()
 			prevMapsLength += pointers[2*i+1];
 		}
 		dataAccessor.getData(dataBuffer, pointers, data_block);
-		whatShouldIRead.count--;
+		randomer.genNextRandom();
+		randomer.shuffle(dataBuffer);
+		char encodedPointers[BLOCK_COUNT*2];
+		char encodedMap[BLOCK_COUNT];
+		memcpy(encodedPointers, pointers, BLOCK_COUNT*2);
+		memcpy(encodedMap, randomer.getMapPointer(), BLOCK_COUNT);
+		mapper.encodePointersAndMap(encodedPointers, encodedMap);
+		char newMap = 1;
+		fwrite(&newMap, 1, 1, outputFile);
+		fwrite(encodedPointers, 2, MAX_FILE_COUNT, outputFile);
+		fwrite(encodedMap, BLOCK_COUNT, 1, outputFile);
+		fwrite(dataBuffer, BLOCK_COUNT, data_block, outputFile);	
+		newMap = 0;
+		while(--whatShouldIRead.count > 0)
+		{
+			dataAccessor.getData(dataBuffer, pointers, data_block);
+			randomer.shuffle(dataBuffer);
+			fwrite(&newMap, 1, 1, outputFile);
+			fwrite(dataBuffer, BLOCK_COUNT, data_block, outputFile);
+		}
+		tellPercentageDone(lengther.getProcessedPart());
+		whatShouldIRead = lengther.getNextLengthes();
 	}while(whatShouldIRead.count > 0);
 	delete[] dataBuffer; 
 
@@ -179,7 +204,7 @@ string Encoder ::EncoderInteractive ::askForVerbalKey(const string target, const
 			return previostAnswer;
 		}
 	}
-	cout << "What will be the password for " << target << "? (live blank for password " << proposal  <<endl;
+	cout << "What will be the password for " << target << "? (live blank for password " << proposal  << ')'<<endl;
 	cout << "Enter !f to select filenames as password for all future files" << endl;
 	if (!previostAnswer.empty())
 	{
@@ -248,6 +273,12 @@ path Encoder ::renameKey(path* oldPath, const string* pureName, unsigned char th
 	rename(*oldPath, newPath);
 	return newPath;
 };
+
+void Encoder ::tellPercentageDone(float partDone)
+{
+	cout << 100 - int(partDone * 100) << " %" << endl;
+}
+
 
 Encoder ::~Encoder()
 {}
