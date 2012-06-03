@@ -1,21 +1,3 @@
-*.sdf
-*.sln
-*.suo
-*.xlsx
-*.exe
-*.ilb
-*.pdb
-*.txt
-*.doc
-*.docx
-ipch/*
-Debug/*
-Encoder/Debug/*
-*.vcxproj
-*.filters
-*.user
-Encoder/test/*
-external dependences/*
-*.key
-*.extn
-*.opensdf
+*
+!*.cpp
+!*.h

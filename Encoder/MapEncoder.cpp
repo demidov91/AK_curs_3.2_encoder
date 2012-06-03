@@ -15,7 +15,7 @@ MapEncoder ::ThreadMapEncoder::ThreadMapEncoder(string* key)
 void MapEncoder ::ThreadMapEncoder ::encodeByte(char* pointer)
 {
 	*pointer = *pointer ^ key[currentPosition++];
-	if(currentPosition == length)
+	if(currentPosition >= length)
 	{
 		currentPosition = 0;
 	}

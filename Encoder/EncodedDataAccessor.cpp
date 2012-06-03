@@ -35,7 +35,6 @@ EncodedDataAccessor* EncodedDataAccessor::create(vector<const path>* keys, vecto
 
 void EncodedDataAccessor ::Start()
 {
-	initCrSection();
 	threadsStarted = true;
 	for(int i = 0; i < fileCount; i++)
 	{
@@ -134,9 +133,5 @@ EncodedDataAccessor::~EncodedDataAccessor(void)
 	{
 		free(keys[i]);
 		free(args[i]);
-	}
-	if(threadsStarted)
-	{
-		destroyCrSection();
 	}
 }

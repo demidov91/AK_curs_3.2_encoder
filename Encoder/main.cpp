@@ -5,12 +5,19 @@
 #include <vector>
 #include "Encoder.h"
 #include "Decode.h"
+#include <boost\filesystem.hpp>
 using namespace std;
+using namespace boost ::filesystem;
+
+void initBoost()
+{
+	path bfinml(".");
+}
+
 
 int main(int argc, char** argv)
 {
-	//makeBlankKey();
-	//return 0;
+	initBoost();
 	//beginTests();
 	//return 0;
 	if (argc < 2)
@@ -69,7 +76,14 @@ int main(int argc, char** argv)
 			}
 		}
 		Encoder* processor = new Encoder();
-		int numberOfFiles = size!=0 ? processor ->Start(&except, &only, size) : processor ->Start(&except, &only);
+		try{
+		int numberOfFiles = size!=0 ? processor ->start(&except, &only, size) : processor ->start(&except, &only);
+		}
+		catch(int error)
+		{
+			delete processor;
+			return 1;
+		}
 		cout << ENCODED_SUCCESSFULLY << endl;
 		delete processor;
 	}
@@ -77,12 +91,12 @@ int main(int argc, char** argv)
 	{
 		if (!strcmp(argv[1], "/d"))
 		{
-			if(argc < 4)
+			if(argc < 5)
 			{
 				cerr << WRONG_ARG_D << endl;
 				return 1;
 			}
-			char* str_threadNumber = strrchr(argv[3], '_');
+			char* str_threadNumber = strrchr(argv[4], '_');
 			if (!str_threadNumber || !(*(str_threadNumber+1)))
 			{
 				cerr << WRONG_ARG_D << endl;
@@ -96,9 +110,15 @@ int main(int argc, char** argv)
 			}
 			*str_threadNumber = 0;
 			Decode* decoder = new Decode();
-			int decoded = decoder ->Start(argv[2], argv[3], int_threadNumber);
+			try{
+				int decoded = decoder ->start(argv[2], argv[3], argv[4], int_threadNumber);
+			}
+			catch(int error)
+			{
+				delete decoder;
+				return 1;
+			}
 			cout << ENCODED_SUCCESSFULLY << endl;
-			cout << decoded << " files encoded." << endl;
 			delete decoder;
 		}
 		else

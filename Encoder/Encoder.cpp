@@ -16,13 +16,13 @@ using namespace boost ::filesystem;
 
 Encoder ::Encoder(){};
 
-int Encoder ::Start(vector<const string>* except, const  vector<const string>* only)
+int Encoder ::start(vector<const string>* except, const  vector<const string>* only)
 {
-	return Start(except, only, 150);
+	return start(except, only, 150);
 };
 
 
-int Encoder ::Start(vector<const string>* except, const  vector<const string>* only, int size)
+int Encoder ::start(vector<const string>* except, const  vector<const string>* only, int size)
 {
 	data_block = this ->countDataBlock(size);
 	if (data_block < 1)
@@ -204,34 +204,48 @@ string Encoder ::EncoderInteractive ::askForVerbalKey(const string target, const
 			return previostAnswer;
 		}
 	}
-	cout << "What will be the password for " << target << "? (live blank for password " << proposal  << ')'<<endl;
-	cout << "Enter !f to select filenames as password for all future files" << endl;
+	cout << "What will be the password for " << target << "? (enter !y for password " << proposal  << ')'<<endl;
+	cout << "Enter !f to select filenames as password for all further files" << endl;
 	if (!previostAnswer.empty())
 	{
 		cout << "Enter !p to select \'" << previostAnswer << "\'as password for all files" << endl;
 	}
+	cout << "!e" << " to exit encoding." << endl;
 	string answer;
 	cin >> answer;
-	if (answer.length() == 0)
+	if (!answer.compare("!y"))
 	{
-		previostAnswer = proposal;
-		return previostAnswer;		
-	}
-	if(!answer.compare("!f"))
-	{
-		filenameForAll = true;
 		previostAnswer = proposal;		
 	}
-	else
+	else 
 	{
-		if(!answer.compare("!p") && !previostAnswer.empty())
+		if(!answer.compare("!f"))
 		{
-			previostForAll = true;			
+			filenameForAll = true;
+			previostAnswer = proposal;		
 		}
 		else
 		{
-			previostAnswer = answer;
-		}
+			if(!answer.compare("!e"))
+			{
+				throw 1;
+			}
+			if(!answer.compare("!p") && !previostAnswer.empty())
+			{
+				previostForAll = true;			
+			}
+			else
+			{
+				if(!answer.compare("!n"))
+				{
+					previostAnswer = string();
+				}
+				else
+				{
+					previostAnswer = answer;
+				}
+			}
+		}	
 	}
 	return previostAnswer;
 

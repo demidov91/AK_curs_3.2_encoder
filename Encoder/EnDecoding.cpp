@@ -8,17 +8,6 @@
 using namespace std;
 using namespace boost ::filesystem;
 
-CRITICAL_SECTION crSection;
-
-void initCrSection()
-{
-	InitializeCriticalSectionAndSpinCount(&crSection, 0x00000400);	
-}
-
-void destroyCrSection()
-{
-	DeleteCriticalSection(&crSection);
-}
 
 
 void encode_element(const path* root, PHANDLE output)
@@ -112,9 +101,7 @@ void encode_async(void* in_args)
 	fclose(file);
 	char c_str_root[256];
 	strcpy(c_str_root, args ->file);
-	EnterCriticalSection(&crSection); 
 	path* root = new path(string(c_str_root));
-	LeaveCriticalSection(&crSection); 
 	encode_element(root, args ->pipe);
 	delete root;
 	(*(args ->byteToTalk)) = 0;

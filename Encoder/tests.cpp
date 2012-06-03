@@ -97,7 +97,7 @@ void test_ReadToBuffer(HANDLE pipe, char*buffer, int size)
 
 void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char* outp1, const char* outp2)
 {
-	initCrSection();
+	
 	FILE* file;
 	fopen_s(&file, inp1, "rb");
 	fseek(file, 0, SEEK_END);
@@ -106,14 +106,14 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 
 	HANDLE rPipe[2], wPipe[2];
 
-	CreatePipe(&rPipe[0], &wPipe[0], NULL, 100000000); 
+	CreatePipe(&rPipe[0], &wPipe[0], NULL, 100000000);
 	ArgsForAsyncEncoder* args1 = (ArgsForAsyncEncoder*)malloc(sizeof(ArgsForAsyncEncoder));
 	args1 ->key = "key1.txt";
 	args1 ->file = inp1;
 	args1 ->pipe = &wPipe[0];
 	char byteToTalk1 = 1;
 	args1 ->byteToTalk = &byteToTalk1;
-	_beginthread(encode_async, 10000, (void*)args1); 
+	_beginthread(encode_async, 10000, (void*)args1);
 
 	fopen_s(&file,inp2, "rb");
 	fseek(file, 0, SEEK_END);
@@ -121,19 +121,19 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 	fclose(file);
 
 
-	CreatePipe(&rPipe[1], &wPipe[1], NULL, 100000000); 
+	CreatePipe(&rPipe[1], &wPipe[1], NULL, 100000000);
 	ArgsForAsyncEncoder* args2 = (ArgsForAsyncEncoder*)malloc(sizeof(ArgsForAsyncEncoder));
 	args2 ->key = "key2.txt";
 	args2 ->file = inp2;
 	args2 ->pipe = &wPipe[1];
 	char byteToTalk2 = 1;
 	args2 ->byteToTalk = &byteToTalk2;
-	_beginthread(encode_async, 10000, args2); 
+	_beginthread(encode_async, 10000, args2);
 
-	
+
 	ofstream outFile1(outp1, ostream ::binary);
 	ofstream outFile2(outp2, ostream ::binary);
-	
+
 	unsigned char oneByteBuffer = 0;
 	unsigned long int fileLengthBuffer = 0;
 	test_ReadToBuffer(rPipe[0],(char*)&oneByteBuffer, 1);
@@ -160,7 +160,7 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 	if(strcmp(path(inp1).filename().string().c_str() ,forFilename))
 	{
 		log_test("async encoding");
-		return;			
+		return;
 	}
 	const int BUFFER_SIZE = 200000;
 	char buffer[BUFFER_SIZE];
@@ -185,27 +185,27 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 	if (oneByteBuffer < 1)
 	{
 		log_test("async encoding");
-		return;
+			return;
 	}
 	test_ReadToBuffer(rPipe[1], forFilename, oneByteBuffer);
 	forFilename[oneByteBuffer] = 0;
 	if(strcmp(path(inp2).filename().string().c_str() ,forFilename))
 	{
 		log_test("async encoding");
-		return;			
+		return;
 	}
 	test_ReadToBuffer(rPipe[1], buffer, size2);
 	outFile2.write(buffer, size2);
 	outFile2.close();
 
-	
+
 	free(args1);
 	free(args2);
 	CloseHandle(wPipe[0]);
 	CloseHandle(wPipe[1]);
 	CloseHandle(rPipe[0]);
-	CloseHandle(rPipe[1]);	
-	destroyCrSection();
+	CloseHandle(rPipe[1]);
+
 }
 
 
@@ -614,6 +614,22 @@ void Friendly ::test_ThreadMapEncoder_encodeByte()
 		log_test("ThreadMapEncoder_encodeByte");
 		return;
 	}
+
+	for (int twoWay = 0; twoWay < 2; twoWay++)
+	{
+		MapEncoder ::ThreadMapEncoder* tester = new MapEncoder ::ThreadMapEncoder(&string());
+		for (int i = 0; i < n; i++)
+		{
+			tester ->encodeByte(&forTest[i]);			
+		}
+		delete tester;
+	}
+	if(strcmp(original, forTest))
+	{
+		log_test("ThreadMapEncoder_encodeByte");
+		return;
+	}
+
 	
 	delete[] forTest;
 }

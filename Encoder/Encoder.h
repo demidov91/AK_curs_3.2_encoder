@@ -63,9 +63,9 @@ public:
 	Parameter size supposed to be used like a percentage of value of output file in comparison to input sum file values.
 	Returns number of encoded files.
 	*/
-	int Start(vector<const string>* except, const  vector<const string>* only, int size);
+	int start(vector<const string>* except, const  vector<const string>* only, int size);
 
-	int Start(vector<const string>* except, const  vector<const string>* only);
+	int start(vector<const string>* except, const  vector<const string>* only);
 
 	~Encoder();
 

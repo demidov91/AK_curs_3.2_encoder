@@ -5,7 +5,7 @@
 #define FILE_BYTE 2
 using namespace std;
 
-void initCrSection();
-void destroyCrSection();
+
 void encode_async(void* in_args);
 void encode(FILE* file, PHANDLE output);
+
