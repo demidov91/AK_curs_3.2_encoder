@@ -16,52 +16,128 @@
 #include "MapEncoder.h"
 #include "FilesystemHelper.h"
 #include "RandomGenerator.h"
+#include "DataEncoder.h"
+#include "FSDataEncoder.h"
 using namespace std;
 
 
 
-
-/*
-encodes with zero key input1.txt into temp.txt and than decodes it into output.txt
-*/
-bool test_EnDecoder()
+void Friendly ::test_DataEncoder_encodeBlock()
 {
-	FILE* file;
-	HANDLE rPipe;
-	HANDLE wPipe;
+	FILE* keyFile = fopen("test\\DataEncoder\\key.key", "rb");
+	DataEncoder tester(keyFile);
+	fclose(keyFile);
+	char initBuffer[128];
+	for(int i = 0; i < 128; i++)
+	{
+		initBuffer[i] = rand();
+	}
+	initBuffer[127] = 0;
+	char bufferToEncode[128];
+	memcpy(bufferToEncode, initBuffer, 128);
+	for(int i = 0; i < 128; i += 16)
+	{
+		tester.encodeBlock(bufferToEncode+i);
+	}
+	keyFile = fopen("test\\DataEncoder\\key.key", "rb");
+	tester = DataEncoder(keyFile);
+	fclose(keyFile);
+	for(int i = 0; i < 128; i += 16)
+	{
+		tester.encodeBlock(bufferToEncode+i);
+	}
+	if(strcmp(initBuffer, bufferToEncode))
+	{
+		log_test("Encode Block");
+	}
+}
 
+void Friendly ::test_FSDataEncoder_pushToEncode()
+{
+	HANDLE rPipe = 0;
+	HANDLE wPipe = 0;
+	CreatePipe(&rPipe, &wPipe, 0, 100);
 	
-	fopen_s(&file, "input.txt", "rb");
-	fseek(file, 0, SEEK_END);
-	int size = ftell(file);
-	fseek(file, 0, SEEK_SET);
-	CreatePipe(&rPipe, &wPipe, NULL, 5000);
-	encode(file, &wPipe);
-	fclose(file);
-	
-	char* buffer = new char [size];
-	DWORD processedNumber;
-	ReadFile(rPipe, buffer, size, &processedNumber, NULL);
-	CloseHandle(rPipe);
+	FSDataEncoder tester("test\\DataEncoder\\blank.key", &wPipe);
+	char* initialSequence = "12345678901234567890123456789012345678901234567890";
+	tester.pushToEncode(initialSequence, 5);
+	DWORD read = 0;
+	DWORD available = 0;
+	char buffer[100];
+	PeekNamedPipe(rPipe, buffer, 100, &read, &available, 0);
+	if(available !=0)
+	{
+		log_test("test_FSDataEncoder_pushToEncode");
+		return;
+	}
+	tester.pushToEncode(initialSequence+5, 11);
+	PeekNamedPipe(rPipe, buffer, 100, &read, &available, 0);
+	if(available !=16)
+	{
+		log_test("test_FSDataEncoder_pushToEncode");
+		return;
+	}
+	tester.pushToEncode(initialSequence+16, 15);
+	PeekNamedPipe(rPipe, buffer, 100, &read, &available, 0);
+	if(available !=16)
+	{
+		log_test("test_FSDataEncoder_pushToEncode");
+		return;
+	}
+	tester.pushToEncode(initialSequence+31, 19);
+	PeekNamedPipe(rPipe, buffer, 100, &read, &available, 0);
+	if(available !=48)
+	{
+		log_test("test_FSDataEncoder_pushToEncode");
+		return;
+	}
 	CloseHandle(wPipe);
+	CloseHandle(rPipe);
+}
 
-	ofstream tempFile("temp.txt", ostream ::binary);
-	tempFile.write(buffer, size);
-	tempFile.close();
-
-	fopen_s(&file, "temp.txt", "rb");
-	CreatePipe(&rPipe, &wPipe, NULL, 5000);
-	
-	encode(file, &wPipe);
+void prepair_file_for_FSDataEncoder_encodeFile(const char* filename, const char* text)
+{
+	FILE* file = fopen(filename, "wb");
+	fwrite(text, 1, strlen(text) + 1, file);
 	fclose(file);
-	ReadFile(rPipe, buffer, size, &processedNumber, NULL);
-	ofstream tempFile2("output.txt", ostream ::binary);
-	tempFile2.write(buffer, size);
-	tempFile2.close();
+}
 
-	delete[] buffer;
-	return true;
 
+void Friendly ::test_FSDataEncoder_encodeFile()
+{
+	HANDLE rPipe = 0;
+	HANDLE wPipe = 0;
+	CreatePipe(&rPipe, &wPipe, 0, 0);
+	FSDataEncoder tester("test\\FSDataEncoder\\blank.key", &wPipe);
+	char* initialSequence = "12345678901234567890123456789012345678901234567890";
+	tester.pushToEncode(initialSequence, 50);
+	
+	const char* filename = "test\\FSDataEncoder\\input1.txt";
+	const char* text = "Mother was washing windows";
+	prepair_file_for_FSDataEncoder_encodeFile(filename, text);
+
+	FILE* file;
+	fopen_s(&file, filename, "rb");
+	tester.encodeFile(file);
+	fclose(file);
+
+	char buffer[100];
+	DWORD read = 0;
+	ReadFile(rPipe, buffer, 50, &read, 0);
+	buffer[50] = 0;
+	if(strcmp(buffer, initialSequence))
+	{
+		log_test("test_FSDataEncoder_encodeFile");
+		return;
+	}
+	ReadFile(rPipe, buffer, strlen(text)+1, &read, 0);
+	if(strcmp(buffer, text))
+	{
+		log_test("test_FSDataEncoder_encodeFile");
+		return;
+	}
+	CloseHandle(wPipe);
+	CloseHandle(rPipe);
 }
 
 void test_ReadToBuffer(HANDLE pipe, char*buffer, int size)
@@ -137,6 +213,100 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 	unsigned char oneByteBuffer = 0;
 	unsigned long int fileLengthBuffer = 0;
 	test_ReadToBuffer(rPipe[0],(char*)&oneByteBuffer, 1);
+	test_ReadToBuffer(rPipe[0],(char*)&fileLengthBuffer, 4);
+	test_ReadToBuffer(rPipe[0],(char*)&oneByteBuffer, 1);
+	char forFilename[257];
+	test_ReadToBuffer(rPipe[0], forFilename, oneByteBuffer);
+	forFilename[oneByteBuffer] = 0;
+	const int BUFFER_SIZE = 200000;
+	char buffer[BUFFER_SIZE];
+	test_ReadToBuffer(rPipe[0], buffer, size1);
+	outFile1.write(buffer, size1);
+	outFile1.close();
+
+
+	test_ReadToBuffer(rPipe[1],(char*)&oneByteBuffer, 1);
+	test_ReadToBuffer(rPipe[1],(char*)&fileLengthBuffer, 4);
+	test_ReadToBuffer(rPipe[1],(char*)&oneByteBuffer, 1);
+	test_ReadToBuffer(rPipe[1], forFilename, oneByteBuffer);
+	forFilename[oneByteBuffer] = 0;
+	test_ReadToBuffer(rPipe[1], buffer, size2);
+	outFile2.write(buffer, size2);
+	outFile2.close();
+
+
+	free(args1);
+	free(args2);
+	CloseHandle(wPipe[0]);
+	CloseHandle(wPipe[1]);
+	CloseHandle(rPipe[0]);
+	CloseHandle(rPipe[1]);
+
+}
+
+
+/**
+encodes input1.txt, input2.txt into output1.txt and outout2.txt and decodes them back into input1_2.txt and input2_2.txt 
+*/
+void test_EnDecoder_async()
+{
+	FILE* key1, *key2;
+	fopen_s(&key1, "key1.txt", "wb");
+	fopen_s(&key2, "key2.txt", "wb");
+	for(int i = 0; i < 56; i++)
+	{
+		int buff = rand();
+		fwrite(&buff, sizeof(int), 1, key1);
+		buff = rand();
+		fwrite(&buff, sizeof(int), 1, key2);
+	}
+	fclose(key1);
+	fclose(key2);
+
+	test_EnDecoder_async_one_way("input1.txt", "input2.txt", "output1.txt", "outptu2.txt");
+	test_EnDecoder_async_one_way("output1.txt", "outptu2.txt", "input1_2.txt", "input2_2.txt");
+}
+
+
+void Friendly ::test_FSDataEncoder_encodeElement()
+{
+	const char* inp1 = "test\\FSDataEncoder\\encElement1.txt";
+	const char* inp2 = "test\\FSDataEncoder\\encElement2.txt";
+	FILE* file;
+	fopen_s(&file, inp1, "rb");
+	fseek(file, 0, SEEK_END);
+	long size1 = ftell(file);
+	fclose(file);
+
+	HANDLE rPipe[2], wPipe[2];
+
+	CreatePipe(&rPipe[0], &wPipe[0], NULL, 100000000);
+	ArgsForAsyncEncoder* args1 = (ArgsForAsyncEncoder*)malloc(sizeof(ArgsForAsyncEncoder));
+	args1 ->key = "test\\FSDataEncoder\\blank.key";
+	args1 ->file = inp1;
+	args1 ->pipe = &wPipe[0];
+	char byteToTalk1 = 1;
+	args1 ->byteToTalk = &byteToTalk1;
+	_beginthread(encode_async, 10000, (void*)args1);
+
+	fopen_s(&file,inp2, "rb");
+	fseek(file, 0, SEEK_END);
+	long size2 = ftell(file);
+	fclose(file);
+
+
+	CreatePipe(&rPipe[1], &wPipe[1], NULL, 100000000);
+	ArgsForAsyncEncoder* args2 = (ArgsForAsyncEncoder*)malloc(sizeof(ArgsForAsyncEncoder));
+	args2 ->key = "test\\FSDataEncoder\\blank.key";
+	args2 ->file = inp2;
+	args2 ->pipe = &wPipe[1];
+	char byteToTalk2 = 1;
+	args2 ->byteToTalk = &byteToTalk2;
+	_beginthread(encode_async, 10000, args2);
+
+	unsigned char oneByteBuffer = 0;
+	unsigned long int fileLengthBuffer = 0;
+	test_ReadToBuffer(rPipe[0],(char*)&oneByteBuffer, 1);
 	if (oneByteBuffer != FILE_BYTE)
 	{
 		log_test("async encoding");
@@ -165,9 +335,7 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 	const int BUFFER_SIZE = 200000;
 	char buffer[BUFFER_SIZE];
 	test_ReadToBuffer(rPipe[0], buffer, size1);
-	outFile1.write(buffer, size1);
-	outFile1.close();
-
+	
 
 	test_ReadToBuffer(rPipe[1],(char*)&oneByteBuffer, 1);
 	if (oneByteBuffer != FILE_BYTE)
@@ -195,9 +363,7 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 		return;
 	}
 	test_ReadToBuffer(rPipe[1], buffer, size2);
-	outFile2.write(buffer, size2);
-	outFile2.close();
-
+	
 
 	free(args1);
 	free(args2);
@@ -205,32 +371,9 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 	CloseHandle(wPipe[1]);
 	CloseHandle(rPipe[0]);
 	CloseHandle(rPipe[1]);
-
+	
 }
 
-
-/**
-encodes input1.txt, input2.txt into output1.txt and outout2.txt and decodes them back into input1_2.txt and input2_2.txt 
-*/
-void test_EnDecoder_async()
-{
-	FILE* key1, *key2;
-	fopen_s(&key1, "key1.txt", "wb");
-	fopen_s(&key2, "key2.txt", "wb");
-	for(int i = 0; i < 56; i++)
-	{
-		int buff = rand();
-		int nuls = 0;
-		fwrite(&buff, sizeof(int), 1, key1);
-		buff = rand();
-		fwrite(&buff, sizeof(int), 1, key2);
-	}
-	fclose(key1);
-	fclose(key2);
-
-	test_EnDecoder_async_one_way("input1.txt", "input2.txt", "output1.txt", "outptu2.txt");
-	test_EnDecoder_async_one_way("output1.txt", "outptu2.txt", "input1_2.txt", "input2_2.txt");
-}
 
 
 
@@ -648,7 +791,10 @@ void makeBlankKey()
 
 void beginTests()
 {
-	test_EnDecoder();
+	Friendly ::test_DataEncoder_encodeBlock();
+	Friendly ::test_FSDataEncoder_pushToEncode();
+	Friendly ::test_FSDataEncoder_encodeElement();
+	Friendly ::test_FSDataEncoder_encodeFile();
 	test_EnDecoder_async();
 	test_EncodedDataAccessor();
 	test_EncoderCountpercentage();

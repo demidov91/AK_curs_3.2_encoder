@@ -4,6 +4,10 @@
 class Friendly
 {
 public:
+	void static test_DataEncoder_encodeBlock();
+	void static test_FSDataEncoder_pushToEncode();
+	void static test_FSDataEncoder_encodeFile();
+	void static test_FSDataEncoder_encodeElement();
 	void static test_formCollectionOfAvailableKeys();
 	void static test_Encoder_keyForThread();
 	void static test_Encoder_generateKeyForThread();
