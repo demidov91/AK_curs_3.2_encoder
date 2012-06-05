@@ -18,6 +18,7 @@
 #include "RandomGenerator.h"
 #include "DataEncoder.h"
 #include "FSDataEncoder.h"
+#include "ByteEncoder.h"
 using namespace std;
 
 
@@ -745,7 +746,7 @@ void Friendly ::test_ThreadMapEncoder_encodeByte()
 	
 	for (int twoWay = 0; twoWay < 2; twoWay++)
 	{
-		MapEncoder ::ThreadMapEncoder* tester = new MapEncoder ::ThreadMapEncoder(&string("12345"));
+		ByteEncoder* tester = new ByteEncoder(&string("12345"));
 		for (int i = 0; i < n; i++)
 		{
 			tester ->encodeByte(&forTest[i]);			
@@ -760,7 +761,7 @@ void Friendly ::test_ThreadMapEncoder_encodeByte()
 
 	for (int twoWay = 0; twoWay < 2; twoWay++)
 	{
-		MapEncoder ::ThreadMapEncoder* tester = new MapEncoder ::ThreadMapEncoder(&string());
+		ByteEncoder* tester = new ByteEncoder(&string());
 		for (int i = 0; i < n; i++)
 		{
 			tester ->encodeByte(&forTest[i]);			

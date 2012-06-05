@@ -4,24 +4,13 @@
 #include <string>
 #include "tests.h"
 #include "Constants.h"
+#include "ByteEncoder.h"
 using namespace std;
 
 class MapEncoder
 {
 private:
-	class ThreadMapEncoder
-	{
-	private:
-		char* key;
-		int currentPosition;
-		int length;
-	public:
-		ThreadMapEncoder(string*);
-		void encodeByte(char*);
-		~ThreadMapEncoder();
-	friend Friendly;
-	};	
-	vector<ThreadMapEncoder*> threads;
+	vector<ByteEncoder*> threads;
 	int threadCount;
 public:
 	MapEncoder();

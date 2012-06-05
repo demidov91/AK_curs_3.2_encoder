@@ -4,28 +4,9 @@
 #include "Constants.h"
 
 
-MapEncoder ::ThreadMapEncoder::ThreadMapEncoder(string* key)
-{
-	length = key ->length();
-	this ->key = (char*)malloc(length + 1);
-	strcpy(this ->key, key ->c_str());
-	currentPosition = 0;
-}
-
-void MapEncoder ::ThreadMapEncoder ::encodeByte(char* pointer)
-{
-	*pointer = *pointer ^ key[currentPosition++];
-	if(currentPosition >= length)
-	{
-		currentPosition = 0;
-	}
-}
 
 
-MapEncoder ::ThreadMapEncoder::~ThreadMapEncoder()
-{
-	free(key);
-}
+
 
 MapEncoder::MapEncoder()
 {
@@ -36,7 +17,7 @@ MapEncoder* MapEncoder::create(vector<const string>* keys)
 {
 	for(vector<const string> ::iterator it = keys ->begin(); it != keys ->end(); it++)
 	{
-		ThreadMapEncoder* thread = new ThreadMapEncoder(&*it);
+		ByteEncoder* thread = new ByteEncoder(&*it);
 		threads.push_back(thread);
 	}
 	threadCount = keys ->size();
@@ -60,7 +41,7 @@ void MapEncoder::encodePointersAndMap(char* pointers, char* map)
 
 MapEncoder::~MapEncoder()
 {
-	for(vector<ThreadMapEncoder*> ::iterator it = threads.begin(); it != threads.end(); it++)
+	for(vector<ByteEncoder*> ::iterator it = threads.begin(); it != threads.end(); it++)
 	{
 		delete *it;
 	}	
