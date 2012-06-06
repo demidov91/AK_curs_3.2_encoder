@@ -217,7 +217,7 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 	test_ReadToBuffer(rPipe[0],(char*)&fileLengthBuffer, 4);
 	test_ReadToBuffer(rPipe[0],(char*)&oneByteBuffer, 1);
 	char forFilename[257];
-	test_ReadToBuffer(rPipe[0], forFilename, oneByteBuffer);
+	test_ReadToBuffer(rPipe[0], forFilename, strlen(inp1));
 	forFilename[oneByteBuffer] = 0;
 	const int BUFFER_SIZE = 200000;
 	char buffer[BUFFER_SIZE];
@@ -229,7 +229,7 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 	test_ReadToBuffer(rPipe[1],(char*)&oneByteBuffer, 1);
 	test_ReadToBuffer(rPipe[1],(char*)&fileLengthBuffer, 4);
 	test_ReadToBuffer(rPipe[1],(char*)&oneByteBuffer, 1);
-	test_ReadToBuffer(rPipe[1], forFilename, oneByteBuffer);
+	test_ReadToBuffer(rPipe[1], forFilename, strlen(inp2));
 	forFilename[oneByteBuffer] = 0;
 	test_ReadToBuffer(rPipe[1], buffer, size2);
 	outFile2.write(buffer, size2);
@@ -248,6 +248,7 @@ void test_EnDecoder_async_one_way(const char* inp1, const char* inp2, const char
 
 /**
 encodes input1.txt, input2.txt into output1.txt and outout2.txt and decodes them back into input1_2.txt and input2_2.txt 
+This test will not work correctly but it won't raise exception too.
 */
 void test_EnDecoder_async()
 {
