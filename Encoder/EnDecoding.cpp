@@ -12,12 +12,13 @@ using namespace boost ::filesystem;
 void encode_async(void* in_args)
 {
 	ArgsForAsyncEncoder* args = (ArgsForAsyncEncoder*)in_args; 
-	FSDataEncoder threadParser(args ->key,  args ->pipe);
+	FSDataEncoder* threadParser = new FSDataEncoder(args ->key,  args ->pipe);
 	char c_str_root[256];
 	strcpy(c_str_root, args ->file);
 	path* root = new path(string(c_str_root));
-	threadParser.encodeElement(root);
+	threadParser ->encodeElement(root);
 	delete root;
+	delete threadParser;
 	(*(args ->byteToTalk)) = 0;
 }
 

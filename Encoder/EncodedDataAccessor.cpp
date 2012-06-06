@@ -55,6 +55,10 @@ void EncodedDataAccessor ::getData(BYTE* buffer, BYTE* pointers, char blockSize)
 	{
 		char fileNumber = i;
 		int lengthToRead = pointers[2*i+1] * blockSize;
+		if (pointers[2*i+1] ==0 && pointers[2*i] ==0)
+		{
+			lengthToRead = BLOCK_COUNT * blockSize;			
+		}
 		int remainsToRead = lengthToRead;
 		DWORD wasAvailable = 0;
 		DWORD canRead = 0;
@@ -133,5 +137,7 @@ EncodedDataAccessor::~EncodedDataAccessor(void)
 	{
 		free(keys[i]);
 		free(args[i]);
+		CloseHandle(inPipes[i]);
+		CloseHandle(outPipes[i]);
 	}
 }

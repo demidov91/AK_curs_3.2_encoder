@@ -10,6 +10,7 @@
 #include "EncodedDataAccessor.h"
 #include "LengthProducer.h"
 #include "Constants.h"
+#include <random>
 using namespace std;
 using namespace boost ::filesystem;
 
@@ -75,7 +76,7 @@ int Encoder ::start(vector<const string>* except, const  vector<const string>* o
 	mapper.create(&verbalKeys);
 	BYTE threadsCount = targets.size();
 	fopen_s(&outputFile, "some_name.extn", "wb");
-	fwrite(&threadsCount, 1, 1, outputFile);
+	fwrite(&data_block, 1, 1, outputFile);
 	runEncodingCycle(threadsCount);
 	fclose(outputFile);
 	return 0;
@@ -92,7 +93,7 @@ void Encoder ::runEncodingCycle(BYTE threadCount)
 		for (int i = 0; i < threadCount; i++)
 		{
 			pointers[2*i+1] = whatShouldIRead.answer[i].length;
-			pointers[2*i] = pointers[2*i+1] ? prevMapsLength : 0;
+			pointers[2*i] =  whatShouldIRead.answer[i].length ? prevMapsLength : rand();
 			prevMapsLength += pointers[2*i+1];
 		}
 		dataAccessor.getData(dataBuffer, pointers, data_block);

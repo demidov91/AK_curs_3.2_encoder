@@ -3,10 +3,9 @@
 #include <Windows.h>
 #include "DataEncoder.h"
 #include <boost\filesystem.hpp>
+#include "Constants.h"
 using namespace std;
 using namespace boost ::filesystem;
-#define DIRECTORY_BYTE 1
-#define FILE_BYTE 2
 
 #include "tests.h"
 

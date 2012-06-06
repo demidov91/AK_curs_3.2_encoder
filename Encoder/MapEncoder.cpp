@@ -3,11 +3,6 @@
 #include <string>
 #include "Constants.h"
 
-
-
-
-
-
 MapEncoder::MapEncoder()
 {
 
@@ -30,7 +25,11 @@ void MapEncoder::encodePointersAndMap(char* pointers, char* map)
 	{
 		BYTE start = pointers[2*i];
 		threads[i] ->encodeByte(pointers+2*i);
-		BYTE length = pointers[2*i+1];
+		int length = (BYTE)pointers[2*i+1];
+		if (!(start||length))
+		{
+			length = BLOCK_COUNT;
+		}
 		threads[i] ->encodeByte(pointers+2*i+1);
 		for(int j = start; j < start+length; j++)
 		{

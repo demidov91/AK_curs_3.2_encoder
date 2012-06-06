@@ -109,9 +109,9 @@ void Friendly ::test_FSDataEncoder_encodeFile()
 	HANDLE rPipe = 0;
 	HANDLE wPipe = 0;
 	CreatePipe(&rPipe, &wPipe, 0, 0);
-	FSDataEncoder tester("test\\FSDataEncoder\\blank.key", &wPipe);
+	FSDataEncoder* tester = new FSDataEncoder("test\\FSDataEncoder\\blank.key", &wPipe);
 	char* initialSequence = "12345678901234567890123456789012345678901234567890";
-	tester.pushToEncode(initialSequence, 50);
+	tester ->pushToEncode(initialSequence, 50);
 	
 	const char* filename = "test\\FSDataEncoder\\input1.txt";
 	const char* text = "Mother was washing windows";
@@ -119,9 +119,9 @@ void Friendly ::test_FSDataEncoder_encodeFile()
 
 	FILE* file;
 	fopen_s(&file, filename, "rb");
-	tester.encodeFile(file);
+	tester ->encodeFile(file);
 	fclose(file);
-
+	delete tester;
 	char buffer[100];
 	DWORD read = 0;
 	ReadFile(rPipe, buffer, 50, &read, 0);

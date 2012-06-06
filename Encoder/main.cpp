@@ -18,8 +18,8 @@ void initBoost()
 int main(int argc, char** argv)
 {
 	initBoost();
-	beginTests();
-	return 0;
+	//beginTests();
+	//return 0;
 	if (argc < 2)
 	{
 		cerr << NOT_ENOUGH_PARAMETERS << endl;

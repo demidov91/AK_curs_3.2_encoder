@@ -95,13 +95,11 @@ void FSDataEncoder::pushToEncode(void* buff, int length)
 void FSDataEncoder ::encodeFile(FILE* file)
 {
 	char bytesRead = fread(this ->buffer+bytesInBuffer, 1, 16-bytesInBuffer, file);
-	flushBuffer();
-	bytesInBuffer = 0;
-	bytesRead = fread(this ->buffer, 1, 16, file);
-	while(bytesRead)
+	bytesInBuffer += bytesRead;
+	while(bytesInBuffer == 16)
 	{
 		flushBuffer();
-		bytesRead = fread(this ->buffer, 1, 16, file);
+		bytesInBuffer = fread(this ->buffer, 1, 16, file);
 	}
 
 }
@@ -109,5 +107,8 @@ void FSDataEncoder ::encodeFile(FILE* file)
 
 FSDataEncoder ::~FSDataEncoder()
 {
+	DWORD bytesWritten = 0;
+	processor ->encodeBlock(buffer);
+	WriteFile(*pipe, buffer, bytesInBuffer, &bytesWritten, 0);
 	delete processor;
 }
